@@ -754,6 +754,8 @@
     "copy_failed": "Copy failed",
     "lines": "lines",
     "removed": "Filtered",
+    "collapse": "Collapse",
+    "expand": "Expand",
     "upgrade_required_title": "Please Upgrade CLI Proxy API",
     "upgrade_required_desc": "The current server version does not support the logs viewing feature. Please upgrade to the latest version of CLI Proxy API to use this feature."
   },

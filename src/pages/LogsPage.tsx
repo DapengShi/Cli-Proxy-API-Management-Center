@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
+import { CollapsibleContent } from '@/components/ui/CollapsibleContent';
 import {
   IconDownload,
   IconEyeOff,
@@ -1059,7 +1060,9 @@ export function LogsPage() {
                             </span>
                           )}
 
-                          {line.message && <span className={styles.message}>{line.message}</span>}
+                          {line.message && (
+                            <CollapsibleContent content={line.message} className={styles.message} />
+                          )}
                         </div>
                       </div>
                     );
@@ -1302,7 +1305,12 @@ export function LogsPage() {
                                   </span>
                                 )}
 
-                                {parsed.message && <span className={styles.message}>{parsed.message}</span>}
+                                {parsed.message && (
+                                  <CollapsibleContent
+                                    content={parsed.message}
+                                    className={styles.message}
+                                  />
+                                )}
                               </div>
                             </div>
                           );

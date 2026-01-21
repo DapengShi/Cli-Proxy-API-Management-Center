@@ -1,0 +1,85 @@
+@use '../../styles/mixins' as *;
+
+.collapsibleWrapper {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.collapsedContent {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.expandedContent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  flex-basis: 100%;
+}
+
+.preview {
+  word-break: break-word;
+  color: var(--text-secondary);
+}
+
+.contentBlock {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: $radius-md;
+  padding: 12px;
+  margin: 4px 0;
+  max-height: 400px;
+  overflow: auto;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  -webkit-overflow-scrolling: touch;
+
+  @include mobile {
+    max-height: 300px;
+    font-size: 11px;
+    padding: 10px;
+  }
+}
+
+.toggleButton {
+  @include button-reset;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: $radius-full;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary-color);
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+
+  &:hover {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.35);
+  }
+
+  &:active {
+    background: rgba(59, 130, 246, 0.2);
+  }
+
+  @include mobile {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+}
