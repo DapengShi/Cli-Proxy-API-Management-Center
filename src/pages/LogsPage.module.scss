@@ -379,6 +379,9 @@
   align-items: baseline;
   gap: 6px;
   min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .badge {
@@ -501,6 +504,10 @@
 .message {
   color: var(--text-secondary);
   word-break: break-word;
+  overflow-wrap: break-word;
+  flex-basis: 100%;
+  min-width: 0;
+  max-width: 100%;
 
   @include mobile {
     flex-basis: 100%;
