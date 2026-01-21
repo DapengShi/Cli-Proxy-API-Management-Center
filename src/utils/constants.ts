@@ -42,14 +42,14 @@ export const OAUTH_CARD_IDS = [
   'anthropic-oauth-card',
   'antigravity-oauth-card',
   'gemini-cli-oauth-card',
-  'qwen-oauth-card'
+  'qwen-oauth-card',
 ];
 export const OAUTH_PROVIDERS = {
   CODEX: 'codex',
   ANTHROPIC: 'anthropic',
   ANTIGRAVITY: 'antigravity',
   GEMINI_CLI: 'gemini-cli',
-  QWEN: 'qwen'
+  QWEN: 'qwen',
 } as const;
 
 // API 端点
@@ -61,5 +61,5 @@ export const API_ENDPOINTS = {
   AUTH_FILES: '/auth-files',
   OAUTH: '/oauth',
   USAGE: '/usage',
-  LOGS: '/logs'
+  LOGS: '/logs',
 } as const;

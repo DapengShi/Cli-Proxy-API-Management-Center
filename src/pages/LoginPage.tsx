@@ -63,7 +63,7 @@ export function LoginPage() {
       await login({
         apiBase: baseToUse,
         managementKey: managementKey.trim(),
-        rememberPassword
+        rememberPassword,
       });
       showNotification(t('common.connected_status'), 'success');
       navigate('/', { replace: true });

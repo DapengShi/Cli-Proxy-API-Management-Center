@@ -13,4 +13,3 @@ export interface AmpcodeConfig {
   modelMappings?: AmpcodeModelMapping[];
   forceModelMappings?: boolean;
 }
-

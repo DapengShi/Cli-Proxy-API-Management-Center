@@ -16,7 +16,7 @@ const baseSvgProps: SVGProps<SVGSVGElement> = {
   strokeLinecap: 'round',
   strokeLinejoin: 'round',
   'aria-hidden': 'true',
-  focusable: 'false'
+  focusable: 'false',
 };
 
 export function IconSlidersHorizontal({ size = 20, ...props }: IconProps) {

@@ -15,7 +15,7 @@ export interface PriceSettingsCardProps {
 export function PriceSettingsCard({
   modelNames,
   modelPrices,
-  onPricesChange
+  onPricesChange,
 }: PriceSettingsCardProps) {
   const { t } = useTranslation();
 

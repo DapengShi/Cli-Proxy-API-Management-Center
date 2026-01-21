@@ -8,7 +8,7 @@ import type {
   AntigravityQuotaInfo,
   AntigravityModelsPayload,
   GeminiCliParsedBucket,
-  GeminiCliQuotaBucketState
+  GeminiCliQuotaBucketState,
 } from '@/types';
 import { ANTIGRAVITY_QUOTA_GROUPS, GEMINI_CLI_GROUP_LOOKUP } from './constants';
 import { normalizeQuotaFraction } from './parsers';
@@ -54,7 +54,7 @@ export function buildGeminiCliQuotaBuckets(
         remainingAmount: bucket.remainingAmount,
         resetTime: bucket.resetTime,
         tokenType: bucket.tokenType,
-        modelIds: [bucket.modelId]
+        modelIds: [bucket.modelId],
       });
       return;
     }
@@ -77,7 +77,7 @@ export function buildGeminiCliQuotaBuckets(
       remainingAmount: bucket.remainingAmount,
       resetTime: bucket.resetTime,
       tokenType: bucket.tokenType,
-      modelIds: uniqueModelIds
+      modelIds: uniqueModelIds,
     };
   });
 }
@@ -101,7 +101,7 @@ export function getAntigravityQuotaInfo(entry?: AntigravityQuotaInfo): {
   return {
     remainingFraction,
     resetTime,
-    displayName
+    displayName,
   };
 }
 
@@ -150,7 +150,7 @@ export function buildAntigravityQuotaGroups(
           id,
           remainingFraction,
           resetTime: info.resetTime,
-          displayName: info.displayName
+          displayName: info.displayName,
         };
       })
       .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
@@ -168,7 +168,7 @@ export function buildAntigravityQuotaGroups(
       label,
       models: quotaEntries.map((entry) => entry.id),
       remainingFraction,
-      resetTime
+      resetTime,
     };
   };
 

@@ -332,7 +332,9 @@
   border-radius: 8px;
   background: var(--bg-primary);
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 
   input[type='checkbox'] {
     margin-top: 2px;
@@ -419,7 +421,9 @@
   height: 8px;
   border-radius: 2px;
   min-width: 6px;
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
 
   &:hover {
     transform: scaleY(1.5);

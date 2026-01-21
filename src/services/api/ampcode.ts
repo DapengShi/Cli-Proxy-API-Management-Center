@@ -15,7 +15,8 @@ export const ampcodeApi = {
   updateUpstreamUrl: (url: string) => apiClient.put('/ampcode/upstream-url', { value: url }),
   clearUpstreamUrl: () => apiClient.delete('/ampcode/upstream-url'),
 
-  updateUpstreamApiKey: (apiKey: string) => apiClient.put('/ampcode/upstream-api-key', { value: apiKey }),
+  updateUpstreamApiKey: (apiKey: string) =>
+    apiClient.put('/ampcode/upstream-api-key', { value: apiKey }),
   clearUpstreamApiKey: () => apiClient.delete('/ampcode/upstream-api-key'),
 
   async getModelMappings(): Promise<AmpcodeModelMapping[]> {
@@ -32,6 +33,6 @@ export const ampcodeApi = {
   deleteModelMappings: (fromList: string[]) =>
     apiClient.delete('/ampcode/model-mappings', { data: { value: fromList } }),
 
-  updateForceModelMappings: (enabled: boolean) => apiClient.put('/ampcode/force-model-mappings', { value: enabled })
+  updateForceModelMappings: (enabled: boolean) =>
+    apiClient.put('/ampcode/force-model-mappings', { value: enabled }),
 };
-

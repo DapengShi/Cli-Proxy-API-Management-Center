@@ -53,7 +53,7 @@ export const logsApi = {
   downloadErrorLog: (filename: string) =>
     apiClient.getRaw(`/request-error-logs/${encodeURIComponent(filename)}`, {
       responseType: 'blob',
-      timeout: LOGS_TIMEOUT_MS
+      timeout: LOGS_TIMEOUT_MS,
     }),
 
   fetchRequestLogs: (): Promise<RequestLogsResponse> =>
@@ -61,18 +61,18 @@ export const logsApi = {
 
   readRequestLogContent: (filename: string): Promise<RequestLogContentResponse> =>
     apiClient.get(`/request-logs/${encodeURIComponent(filename)}/content`, {
-      timeout: LOGS_TIMEOUT_MS
+      timeout: LOGS_TIMEOUT_MS,
     }),
 
   downloadRequestLog: (filename: string) =>
     apiClient.getRaw(`/request-logs/${encodeURIComponent(filename)}`, {
       responseType: 'blob',
-      timeout: LOGS_TIMEOUT_MS
+      timeout: LOGS_TIMEOUT_MS,
     }),
 
   downloadRequestLogById: (id: string) =>
     apiClient.getRaw(`/request-log-by-id/${encodeURIComponent(id)}`, {
       responseType: 'blob',
-      timeout: LOGS_TIMEOUT_MS
+      timeout: LOGS_TIMEOUT_MS,
     }),
 };

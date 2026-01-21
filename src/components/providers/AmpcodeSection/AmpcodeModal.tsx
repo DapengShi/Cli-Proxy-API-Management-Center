@@ -19,7 +19,12 @@ interface AmpcodeModalProps {
   onBusyChange?: (busy: boolean) => void;
 }
 
-export function AmpcodeModal({ isOpen, disableControls, onClose, onBusyChange }: AmpcodeModalProps) {
+export function AmpcodeModal({
+  isOpen,
+  disableControls,
+  onClose,
+  onBusyChange,
+}: AmpcodeModalProps) {
   const { t } = useTranslation();
   const { showNotification } = useNotificationStore();
   const config = useConfigStore((state) => state.config);

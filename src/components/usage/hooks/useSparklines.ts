@@ -13,7 +13,7 @@ export interface SparklineData {
       tension: number;
       pointRadius: number;
       borderWidth: number;
-    }
+    },
   ];
 }
 
@@ -94,10 +94,10 @@ export function useSparklines({ usage, loading }: UseSparklinesOptions): UseSpar
               fill: true,
               tension: 0.45,
               pointRadius: 0,
-              borderWidth: 2
-            }
-          ]
-        }
+              borderWidth: 2,
+            },
+          ],
+        },
       };
     },
     [loading]
@@ -133,6 +133,6 @@ export function useSparklines({ usage, loading }: UseSparklinesOptions): UseSpar
     tokensSparkline,
     rpmSparkline,
     tpmSparkline,
-    costSparkline
+    costSparkline,
   };
 }

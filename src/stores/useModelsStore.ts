@@ -48,7 +48,7 @@ export const useModelsStore = create<ModelsState>((set, get) => ({
       set({
         models: list,
         loading: false,
-        cache: { data: list, timestamp: now, apiBase }
+        cache: { data: list, timestamp: now, apiBase },
       });
 
       return list;
@@ -57,7 +57,7 @@ export const useModelsStore = create<ModelsState>((set, get) => ({
       set({
         error: message,
         loading: false,
-        models: []
+        models: [],
       });
       throw error;
     }
@@ -72,5 +72,5 @@ export const useModelsStore = create<ModelsState>((set, get) => ({
     if (!cache) return false;
     if (cache.apiBase !== apiBase) return false;
     return Date.now() - cache.timestamp < CACHE_EXPIRY_MS;
-  }
+  },
 }));

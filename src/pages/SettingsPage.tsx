@@ -36,7 +36,9 @@ export function SettingsPage() {
   const [retryValue, setRetryValue] = useState(0);
   const [logsMaxTotalSizeMb, setLogsMaxTotalSizeMb] = useState(0);
   const [routingStrategy, setRoutingStrategy] = useState('round-robin');
-  const [pending, setPending] = useState<Record<PendingKey, boolean>>({} as Record<PendingKey, boolean>);
+  const [pending, setPending] = useState<Record<PendingKey, boolean>>(
+    {} as Record<PendingKey, boolean>
+  );
   const [error, setError] = useState('');
 
   const disableControls = connectionStatus !== 'connected';
@@ -105,7 +107,12 @@ export function SettingsPage() {
 
   const toggleSetting = async (
     section: PendingKey,
-    rawKey: 'debug' | 'usage-statistics-enabled' | 'logging-to-file' | 'ws-auth' | 'force-model-prefix',
+    rawKey:
+      | 'debug'
+      | 'usage-statistics-enabled'
+      | 'logging-to-file'
+      | 'ws-auth'
+      | 'force-model-prefix',
     value: boolean,
     updater: (val: boolean) => Promise<any>,
     successMessage: string
@@ -262,7 +269,13 @@ export function SettingsPage() {
               checked={config?.debug ?? false}
               disabled={disableControls || pending.debug || loading}
               onChange={(value) =>
-                toggleSetting('debug', 'debug', value, configApi.updateDebug, t('notification.debug_updated'))
+                toggleSetting(
+                  'debug',
+                  'debug',
+                  value,
+                  configApi.updateDebug,
+                  t('notification.debug_updated')
+                )
               }
             />
 
@@ -328,149 +341,177 @@ export function SettingsPage() {
           </div>
         </Card>
 
-      <Card title={t('basic_settings.proxy_title')}>
-        <Input
-          label={t('basic_settings.proxy_url_label')}
-          placeholder={t('basic_settings.proxy_url_placeholder')}
-          value={proxyValue}
-          onChange={(e) => setProxyValue(e.target.value)}
-          disabled={disableControls || loading}
-        />
-        <div style={{ display: 'flex', gap: 12 }}>
-          <Button variant="secondary" onClick={handleProxyClear} disabled={disableControls || pending.proxy || loading}>
-            {t('basic_settings.proxy_clear')}
-          </Button>
-          <Button onClick={handleProxyUpdate} loading={pending.proxy} disabled={disableControls || loading}>
-            {t('basic_settings.proxy_update')}
-          </Button>
-        </div>
-      </Card>
-
-      <Card title={t('basic_settings.retry_title')}>
-        <div className={styles.retryRow}>
+        <Card title={t('basic_settings.proxy_title')}>
           <Input
-            label={t('basic_settings.retry_count_label')}
-            type="number"
-            inputMode="numeric"
-            min={0}
-            step={1}
-            value={retryValue}
-            onChange={(e) => setRetryValue(Number(e.target.value))}
+            label={t('basic_settings.proxy_url_label')}
+            placeholder={t('basic_settings.proxy_url_placeholder')}
+            value={proxyValue}
+            onChange={(e) => setProxyValue(e.target.value)}
             disabled={disableControls || loading}
-            className={styles.retryInput}
           />
-          <Button
-            className={styles.retryButton}
-            onClick={handleRetryUpdate}
-            loading={pending.retry}
-            disabled={disableControls || loading}
-          >
-            {t('basic_settings.retry_update')}
-          </Button>
-        </div>
-      </Card>
-
-      <Card title={t('basic_settings.logs_max_total_size_title')}>
-        <div className={`${styles.retryRow} ${styles.retryRowAligned} ${styles.retryRowInputGrow}`}>
-          <Input
-            label={t('basic_settings.logs_max_total_size_label')}
-            hint={t('basic_settings.logs_max_total_size_hint')}
-            type="number"
-            inputMode="numeric"
-            min={0}
-            step={1}
-            value={logsMaxTotalSizeMb}
-            onChange={(e) => setLogsMaxTotalSizeMb(Number(e.target.value))}
-            disabled={disableControls || loading}
-            className={styles.retryInput}
-          />
-          <Button
-            className={styles.retryButton}
-            onClick={handleLogsMaxTotalSizeUpdate}
-            loading={pending.logsMaxSize}
-            disabled={disableControls || loading}
-          >
-            {t('basic_settings.logs_max_total_size_update')}
-          </Button>
-        </div>
-      </Card>
-
-      <Card title={t('basic_settings.routing_title')}>
-        <div className={`${styles.retryRow} ${styles.retryRowAligned} ${styles.retryRowInputGrow}`}>
-          <div className="form-group">
-            <label>{t('basic_settings.routing_strategy_label')}</label>
-            <select
-              className="input"
-              value={routingStrategy}
-              onChange={(e) => setRoutingStrategy(e.target.value)}
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Button
+              variant="secondary"
+              onClick={handleProxyClear}
+              disabled={disableControls || pending.proxy || loading}
+            >
+              {t('basic_settings.proxy_clear')}
+            </Button>
+            <Button
+              onClick={handleProxyUpdate}
+              loading={pending.proxy}
               disabled={disableControls || loading}
             >
-              <option value="round-robin">{t('basic_settings.routing_strategy_round_robin')}</option>
-              <option value="fill-first">{t('basic_settings.routing_strategy_fill_first')}</option>
-            </select>
-            <div className="hint">{t('basic_settings.routing_strategy_hint')}</div>
+              {t('basic_settings.proxy_update')}
+            </Button>
           </div>
-          <Button
-            className={styles.retryButton}
-            onClick={handleRoutingStrategyUpdate}
-            loading={pending.routingStrategy}
-            disabled={disableControls || loading}
-          >
-            {t('basic_settings.routing_strategy_update')}
-          </Button>
-        </div>
-      </Card>
+        </Card>
 
-      <Card title={t('basic_settings.quota_title')}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <ToggleSwitch
-            label={t('basic_settings.quota_switch_project')}
-            checked={quotaSwitchProject}
-            disabled={disableControls || pending.switchProject || loading}
-            onChange={(value) =>
-              (async () => {
-                const previous = config?.quotaExceeded?.switchProject ?? false;
-                const nextQuota = { ...(config?.quotaExceeded || {}), switchProject: value };
-                setPendingFlag('switchProject', true);
-                updateConfigValue('quota-exceeded', nextQuota);
-                try {
-                  await configApi.updateSwitchProject(value);
-                  clearCache('quota-exceeded');
-                  showNotification(t('notification.quota_switch_project_updated'), 'success');
-                } catch (err: any) {
-                  updateConfigValue('quota-exceeded', { ...(config?.quotaExceeded || {}), switchProject: previous });
-                  showNotification(`${t('notification.update_failed')}: ${err?.message || ''}`, 'error');
-                } finally {
-                  setPendingFlag('switchProject', false);
-                }
-              })()
-            }
-          />
-          <ToggleSwitch
-            label={t('basic_settings.quota_switch_preview')}
-            checked={quotaSwitchPreview}
-            disabled={disableControls || pending.switchPreview || loading}
-            onChange={(value) =>
-              (async () => {
-                const previous = config?.quotaExceeded?.switchPreviewModel ?? false;
-                const nextQuota = { ...(config?.quotaExceeded || {}), switchPreviewModel: value };
-                setPendingFlag('switchPreview', true);
-                updateConfigValue('quota-exceeded', nextQuota);
-                try {
-                  await configApi.updateSwitchPreviewModel(value);
-                  clearCache('quota-exceeded');
-                  showNotification(t('notification.quota_switch_preview_updated'), 'success');
-                } catch (err: any) {
-                  updateConfigValue('quota-exceeded', { ...(config?.quotaExceeded || {}), switchPreviewModel: previous });
-                  showNotification(`${t('notification.update_failed')}: ${err?.message || ''}`, 'error');
-                } finally {
-                  setPendingFlag('switchPreview', false);
-                }
-              })()
-            }
-          />
-        </div>
-      </Card>
+        <Card title={t('basic_settings.retry_title')}>
+          <div className={styles.retryRow}>
+            <Input
+              label={t('basic_settings.retry_count_label')}
+              type="number"
+              inputMode="numeric"
+              min={0}
+              step={1}
+              value={retryValue}
+              onChange={(e) => setRetryValue(Number(e.target.value))}
+              disabled={disableControls || loading}
+              className={styles.retryInput}
+            />
+            <Button
+              className={styles.retryButton}
+              onClick={handleRetryUpdate}
+              loading={pending.retry}
+              disabled={disableControls || loading}
+            >
+              {t('basic_settings.retry_update')}
+            </Button>
+          </div>
+        </Card>
+
+        <Card title={t('basic_settings.logs_max_total_size_title')}>
+          <div
+            className={`${styles.retryRow} ${styles.retryRowAligned} ${styles.retryRowInputGrow}`}
+          >
+            <Input
+              label={t('basic_settings.logs_max_total_size_label')}
+              hint={t('basic_settings.logs_max_total_size_hint')}
+              type="number"
+              inputMode="numeric"
+              min={0}
+              step={1}
+              value={logsMaxTotalSizeMb}
+              onChange={(e) => setLogsMaxTotalSizeMb(Number(e.target.value))}
+              disabled={disableControls || loading}
+              className={styles.retryInput}
+            />
+            <Button
+              className={styles.retryButton}
+              onClick={handleLogsMaxTotalSizeUpdate}
+              loading={pending.logsMaxSize}
+              disabled={disableControls || loading}
+            >
+              {t('basic_settings.logs_max_total_size_update')}
+            </Button>
+          </div>
+        </Card>
+
+        <Card title={t('basic_settings.routing_title')}>
+          <div
+            className={`${styles.retryRow} ${styles.retryRowAligned} ${styles.retryRowInputGrow}`}
+          >
+            <div className="form-group">
+              <label>{t('basic_settings.routing_strategy_label')}</label>
+              <select
+                className="input"
+                value={routingStrategy}
+                onChange={(e) => setRoutingStrategy(e.target.value)}
+                disabled={disableControls || loading}
+              >
+                <option value="round-robin">
+                  {t('basic_settings.routing_strategy_round_robin')}
+                </option>
+                <option value="fill-first">
+                  {t('basic_settings.routing_strategy_fill_first')}
+                </option>
+              </select>
+              <div className="hint">{t('basic_settings.routing_strategy_hint')}</div>
+            </div>
+            <Button
+              className={styles.retryButton}
+              onClick={handleRoutingStrategyUpdate}
+              loading={pending.routingStrategy}
+              disabled={disableControls || loading}
+            >
+              {t('basic_settings.routing_strategy_update')}
+            </Button>
+          </div>
+        </Card>
+
+        <Card title={t('basic_settings.quota_title')}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <ToggleSwitch
+              label={t('basic_settings.quota_switch_project')}
+              checked={quotaSwitchProject}
+              disabled={disableControls || pending.switchProject || loading}
+              onChange={(value) =>
+                (async () => {
+                  const previous = config?.quotaExceeded?.switchProject ?? false;
+                  const nextQuota = { ...(config?.quotaExceeded || {}), switchProject: value };
+                  setPendingFlag('switchProject', true);
+                  updateConfigValue('quota-exceeded', nextQuota);
+                  try {
+                    await configApi.updateSwitchProject(value);
+                    clearCache('quota-exceeded');
+                    showNotification(t('notification.quota_switch_project_updated'), 'success');
+                  } catch (err: any) {
+                    updateConfigValue('quota-exceeded', {
+                      ...(config?.quotaExceeded || {}),
+                      switchProject: previous,
+                    });
+                    showNotification(
+                      `${t('notification.update_failed')}: ${err?.message || ''}`,
+                      'error'
+                    );
+                  } finally {
+                    setPendingFlag('switchProject', false);
+                  }
+                })()
+              }
+            />
+            <ToggleSwitch
+              label={t('basic_settings.quota_switch_preview')}
+              checked={quotaSwitchPreview}
+              disabled={disableControls || pending.switchPreview || loading}
+              onChange={(value) =>
+                (async () => {
+                  const previous = config?.quotaExceeded?.switchPreviewModel ?? false;
+                  const nextQuota = { ...(config?.quotaExceeded || {}), switchPreviewModel: value };
+                  setPendingFlag('switchPreview', true);
+                  updateConfigValue('quota-exceeded', nextQuota);
+                  try {
+                    await configApi.updateSwitchPreviewModel(value);
+                    clearCache('quota-exceeded');
+                    showNotification(t('notification.quota_switch_preview_updated'), 'success');
+                  } catch (err: any) {
+                    updateConfigValue('quota-exceeded', {
+                      ...(config?.quotaExceeded || {}),
+                      switchPreviewModel: previous,
+                    });
+                    showNotification(
+                      `${t('notification.update_failed')}: ${err?.message || ''}`,
+                      'error'
+                    );
+                  } finally {
+                    setPendingFlag('switchPreview', false);
+                  }
+                })()
+              }
+            />
+          </div>
+        </Card>
       </div>
     </div>
   );

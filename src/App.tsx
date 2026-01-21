@@ -51,12 +51,7 @@ function App() {
   }, []);
 
   if (showSplash) {
-    return (
-      <SplashScreen
-        fadeOut={splashReadyToFade && authReady}
-        onFinish={handleSplashFinish}
-      />
-    );
+    return <SplashScreen fadeOut={splashReadyToFade && authReady} onFinish={handleSplashFinish} />;
   }
 
   return (

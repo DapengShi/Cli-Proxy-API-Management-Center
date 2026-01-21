@@ -18,12 +18,14 @@ export function HeaderInputList({
   addLabel,
   disabled = false,
   keyPlaceholder = 'X-Custom-Header',
-  valuePlaceholder = 'value'
+  valuePlaceholder = 'value',
 }: HeaderInputListProps) {
   const currentEntries = entries.length ? entries : [{ key: '', value: '' }];
 
   const updateEntry = (index: number, field: 'key' | 'value', value: string) => {
-    const next = currentEntries.map((entry, idx) => (idx === index ? { ...entry, [field]: value } : entry));
+    const next = currentEntries.map((entry, idx) =>
+      idx === index ? { ...entry, [field]: value } : entry
+    );
     onChange(next);
   };
 
@@ -69,7 +71,13 @@ export function HeaderInputList({
           </div>
         </Fragment>
       ))}
-      <Button variant="secondary" size="sm" onClick={addEntry} disabled={disabled} className="align-start">
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={addEntry}
+        disabled={disabled}
+        className="align-start"
+      >
         {addLabel}
       </Button>
     </div>

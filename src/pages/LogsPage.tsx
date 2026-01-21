@@ -575,7 +575,9 @@ export function LogsPage() {
       setRequestLogs([]);
       const message = getErrorMessage(err);
       setRequestLogsError(
-        message ? `${t('logs.request_logs_load_error')}: ${message}` : t('logs.request_logs_load_error')
+        message
+          ? `${t('logs.request_logs_load_error')}: ${message}`
+          : t('logs.request_logs_load_error')
       );
     } finally {
       setLoadingRequests(false);
@@ -613,7 +615,9 @@ export function LogsPage() {
     } catch (err: unknown) {
       const message = getErrorMessage(err);
       setRequestLogViewError(
-        message ? `${t('logs.request_logs_load_error')}: ${message}` : t('logs.request_logs_load_error')
+        message
+          ? `${t('logs.request_logs_load_error')}: ${message}`
+          : t('logs.request_logs_load_error')
       );
       setRequestLogLines([]);
     } finally {
@@ -955,9 +959,7 @@ export function LogsPage() {
                   <div className={styles.loadMoreBanner}>
                     <span>{t('logs.load_more_hint')}</span>
                     <div className={styles.loadMoreStats}>
-                      <span>
-                        {t('logs.loaded_lines', { count: parsedVisibleLines.length })}
-                      </span>
+                      <span>{t('logs.loaded_lines', { count: parsedVisibleLines.length })}</span>
                       {removedCount > 0 && (
                         <span className={styles.loadMoreCount}>
                           {t('logs.filtered_lines', { count: removedCount })}
@@ -1099,7 +1101,9 @@ export function LogsPage() {
 
               {requestLogEnabled && (
                 <div>
-                  <div className="status-badge warning">{t('logs.error_logs_request_log_enabled')}</div>
+                  <div className="status-badge warning">
+                    {t('logs.error_logs_request_log_enabled')}
+                  </div>
                 </div>
               )}
 
@@ -1290,7 +1294,9 @@ export function LogsPage() {
                                   </span>
                                 )}
 
-                                {parsed.latency && <span className={styles.pill}>{parsed.latency}</span>}
+                                {parsed.latency && (
+                                  <span className={styles.pill}>{parsed.latency}</span>
+                                )}
                                 {parsed.ip && <span className={styles.pill}>{parsed.ip}</span>}
 
                                 {parsed.method && (
@@ -1318,10 +1324,7 @@ export function LogsPage() {
                       </div>
                     </div>
                   ) : selectedRequestLogForView ? (
-                    <EmptyState
-                      title={t('logs.empty_title')}
-                      description={t('logs.empty_desc')}
-                    />
+                    <EmptyState title={t('logs.empty_title')} description={t('logs.empty_desc')} />
                   ) : (
                     <div className="hint">{t('logs.select_file_to_view')}</div>
                   )}
@@ -1338,7 +1341,11 @@ export function LogsPage() {
         title={t('logs.request_log_download_title')}
         footer={
           <>
-            <Button variant="secondary" onClick={closeRequestLogModal} disabled={requestLogDownloading}>
+            <Button
+              variant="secondary"
+              onClick={closeRequestLogModal}
+              disabled={requestLogDownloading}
+            >
               {t('common.cancel')}
             </Button>
             <Button

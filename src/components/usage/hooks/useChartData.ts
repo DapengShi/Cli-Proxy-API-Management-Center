@@ -26,7 +26,7 @@ export function useChartData({
   usage,
   chartLines,
   isDark,
-  isMobile
+  isMobile,
 }: UseChartDataOptions): UseChartDataReturn {
   const [requestsPeriod, setRequestsPeriod] = useState<'hour' | 'day'>('day');
   const [tokensPeriod, setTokensPeriod] = useState<'hour' | 'day'>('day');
@@ -47,7 +47,7 @@ export function useChartData({
         period: requestsPeriod,
         labels: requestsChartData.labels,
         isDark,
-        isMobile
+        isMobile,
       }),
     [requestsPeriod, requestsChartData.labels, isDark, isMobile]
   );
@@ -58,7 +58,7 @@ export function useChartData({
         period: tokensPeriod,
         labels: tokensChartData.labels,
         isDark,
-        isMobile
+        isMobile,
       }),
     [tokensPeriod, tokensChartData.labels, isDark, isMobile]
   );
@@ -71,6 +71,6 @@ export function useChartData({
     requestsChartData,
     tokensChartData,
     requestsChartOptions,
-    tokensChartOptions
+    tokensChartOptions,
   };
 }

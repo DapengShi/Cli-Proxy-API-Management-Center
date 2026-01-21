@@ -14,7 +14,7 @@ export function ChartLineSelector({
   chartLines,
   modelNames,
   maxLines = 9,
-  onChange
+  onChange,
 }: ChartLineSelectorProps) {
   const { t } = useTranslation();
 

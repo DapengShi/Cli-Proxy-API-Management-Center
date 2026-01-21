@@ -158,7 +158,8 @@ export function normalizeUsageSourceId(
   value: unknown,
   masker: (val: string) => string = maskApiKey
 ): string {
-  const raw = typeof value === 'string' ? value : value === null || value === undefined ? '' : String(value);
+  const raw =
+    typeof value === 'string' ? value : value === null || value === undefined ? '' : String(value);
   const trimmed = raw.trim();
   if (!trimmed) return '';
 
@@ -174,7 +175,10 @@ export function normalizeUsageSourceId(
   return `${USAGE_SOURCE_PREFIX_TEXT}${trimmed}`;
 }
 
-export function buildCandidateUsageSourceIds(input: { apiKey?: string; prefix?: string }): string[] {
+export function buildCandidateUsageSourceIds(input: {
+  apiKey?: string;
+  prefix?: string;
+}): string[] {
   const result: string[] = [];
 
   const prefix = input.prefix?.trim();
@@ -194,7 +198,10 @@ export function buildCandidateUsageSourceIds(input: { apiKey?: string; prefix?: 
 /**
  * 对使用数据中的敏感字段进行遮罩
  */
-export function maskUsageSensitiveValue(value: unknown, masker: (val: string) => string = maskApiKey): string {
+export function maskUsageSensitiveValue(
+  value: unknown,
+  masker: (val: string) => string = maskApiKey
+): string {
   if (value === null || value === undefined) {
     return '';
   }
@@ -206,12 +213,20 @@ export function maskUsageSensitiveValue(value: unknown, masker: (val: string) =>
   let masked = raw;
 
   const queryRegex = /([?&])(api[-_]?key|key|token|access_token|authorization)=([^&#\s]+)/gi;
-  masked = masked.replace(queryRegex, (_full, prefix, keyName, valuePart) => `${prefix}${keyName}=${masker(valuePart)}`);
+  masked = masked.replace(
+    queryRegex,
+    (_full, prefix, keyName, valuePart) => `${prefix}${keyName}=${masker(valuePart)}`
+  );
 
-  const headerRegex = /(api[-_]?key|key|token|access[-_]?token|authorization)\s*([:=])\s*([A-Za-z0-9._-]+)/gi;
-  masked = masked.replace(headerRegex, (_full, keyName, separator, valuePart) => `${keyName}${separator}${masker(valuePart)}`);
+  const headerRegex =
+    /(api[-_]?key|key|token|access[-_]?token|authorization)\s*([:=])\s*([A-Za-z0-9._-]+)/gi;
+  masked = masked.replace(
+    headerRegex,
+    (_full, keyName, separator, valuePart) => `${keyName}${separator}${masker(valuePart)}`
+  );
 
-  const keyLikeRegex = /(sk-[A-Za-z0-9]{6,}|AI[a-zA-Z0-9_-]{6,}|AIza[0-9A-Za-z-_]{8,}|hf_[A-Za-z0-9]{6,}|pk_[A-Za-z0-9]{6,}|rk_[A-Za-z0-9]{6,})/g;
+  const keyLikeRegex =
+    /(sk-[A-Za-z0-9]{6,}|AI[a-zA-Z0-9_-]{6,}|AIza[0-9A-Za-z-_]{8,}|hf_[A-Za-z0-9]{6,}|pk_[A-Za-z0-9]{6,}|rk_[A-Za-z0-9]{6,})/g;
   masked = masked.replace(keyLikeRegex, (match) => masker(match));
 
   if (masked === raw) {
@@ -296,7 +311,7 @@ export function formatUsd(value: number): string {
   const fixed = num.toFixed(2);
   const parts = Number(fixed).toLocaleString(undefined, {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   });
   return `$${parts}`;
 }
@@ -319,7 +334,7 @@ export function collectUsageDetails(usageData: any): UsageDetail[] {
           details.push({
             ...detail,
             source: normalizeUsageSourceId(detail.source),
-            __modelName: modelName
+            __modelName: modelName,
           });
         }
       });
@@ -359,7 +374,7 @@ export function calculateTokenBreakdown(usageData: any): TokenBreakdown {
   let cachedTokens = 0;
   let reasoningTokens = 0;
 
-  details.forEach(detail => {
+  details.forEach((detail) => {
     const tokens = detail?.tokens || {};
     cachedTokens += Math.max(
       typeof tokens.cached_tokens === 'number' ? Math.max(tokens.cached_tokens, 0) : 0,
@@ -376,7 +391,10 @@ export function calculateTokenBreakdown(usageData: any): TokenBreakdown {
 /**
  * 计算最近 N 分钟的 RPM/TPM
  */
-export function calculateRecentPerMinuteRates(windowMinutes: number = 30, usageData: any): RateStats {
+export function calculateRecentPerMinuteRates(
+  windowMinutes: number = 30,
+  usageData: any
+): RateStats {
   const details = collectUsageDetails(usageData);
   const effectiveWindow = Number.isFinite(windowMinutes) && windowMinutes > 0 ? windowMinutes : 30;
 
@@ -389,7 +407,7 @@ export function calculateRecentPerMinuteRates(windowMinutes: number = 30, usageD
   let requestCount = 0;
   let tokenCount = 0;
 
-  details.forEach(detail => {
+  details.forEach((detail) => {
     const timestamp = Date.parse(detail.timestamp);
     if (Number.isNaN(timestamp) || timestamp < windowStart) {
       return;
@@ -404,7 +422,7 @@ export function calculateRecentPerMinuteRates(windowMinutes: number = 30, usageD
     tpm: tokenCount / denominator,
     windowMinutes: effectiveWindow,
     requestCount,
-    tokenCount
+    tokenCount,
   };
 }
 
@@ -417,9 +435,9 @@ export function getModelNamesFromUsage(usageData: any): string[] {
   }
   const apis = usageData.apis || {};
   const names = new Set<string>();
-  Object.values(apis as Record<string, any>).forEach(apiEntry => {
+  Object.values(apis as Record<string, any>).forEach((apiEntry) => {
     const models = apiEntry?.models || {};
-    Object.keys(models).forEach(modelName => {
+    Object.keys(models).forEach((modelName) => {
       if (modelName) {
         names.add(modelName);
       }
@@ -444,7 +462,9 @@ export function calculateCost(detail: any, modelPrices: Record<string, ModelPric
   const rawCachedTokensAlternate = Number(tokens.cache_tokens);
 
   const inputTokens = Number.isFinite(rawInputTokens) ? Math.max(rawInputTokens, 0) : 0;
-  const completionTokens = Number.isFinite(rawCompletionTokens) ? Math.max(rawCompletionTokens, 0) : 0;
+  const completionTokens = Number.isFinite(rawCompletionTokens)
+    ? Math.max(rawCompletionTokens, 0)
+    : 0;
   const cachedTokens = Math.max(
     Number.isFinite(rawCachedTokensPrimary) ? Math.max(rawCachedTokensPrimary, 0) : 0,
     Number.isFinite(rawCachedTokensAlternate) ? Math.max(rawCachedTokensAlternate, 0) : 0
@@ -453,7 +473,8 @@ export function calculateCost(detail: any, modelPrices: Record<string, ModelPric
 
   const promptCost = (promptTokens / TOKENS_PER_PRICE_UNIT) * (Number(price.prompt) || 0);
   const cachedCost = (cachedTokens / TOKENS_PER_PRICE_UNIT) * (Number(price.cache) || 0);
-  const completionCost = (completionTokens / TOKENS_PER_PRICE_UNIT) * (Number(price.completion) || 0);
+  const completionCost =
+    (completionTokens / TOKENS_PER_PRICE_UNIT) * (Number(price.completion) || 0);
   const total = promptCost + cachedCost + completionCost;
   return Number.isFinite(total) && total > 0 ? total : 0;
 }
@@ -461,7 +482,10 @@ export function calculateCost(detail: any, modelPrices: Record<string, ModelPric
 /**
  * 计算总成本
  */
-export function calculateTotalCost(usageData: any, modelPrices: Record<string, ModelPrice>): number {
+export function calculateTotalCost(
+  usageData: any,
+  modelPrices: Record<string, ModelPrice>
+): number {
   const details = collectUsageDetails(usageData);
   if (!details.length || !Object.keys(modelPrices).length) {
     return 0;
@@ -492,7 +516,11 @@ export function loadModelPrices(): Record<string, ModelPrice> {
       const completionRaw = Number(price?.completion);
       const cacheRaw = Number(price?.cache);
 
-      if (!Number.isFinite(promptRaw) && !Number.isFinite(completionRaw) && !Number.isFinite(cacheRaw)) {
+      if (
+        !Number.isFinite(promptRaw) &&
+        !Number.isFinite(completionRaw) &&
+        !Number.isFinite(cacheRaw)
+      ) {
         return;
       }
 
@@ -508,7 +536,7 @@ export function loadModelPrices(): Record<string, ModelPrice> {
       normalized[model] = {
         prompt,
         completion,
-        cache
+        cache,
       };
     });
     return normalized;
@@ -549,7 +577,7 @@ export function getApiStats(usageData: any, modelPrices: Record<string, ModelPri
     Object.entries(modelsData as Record<string, any>).forEach(([modelName, modelData]) => {
       models[modelName] = {
         requests: modelData.total_requests || 0,
-        tokens: modelData.total_tokens || 0
+        tokens: modelData.total_tokens || 0,
       };
 
       const price = modelPrices[modelName];
@@ -566,7 +594,7 @@ export function getApiStats(usageData: any, modelPrices: Record<string, ModelPri
       totalRequests: apiData.total_requests || 0,
       totalTokens: apiData.total_tokens || 0,
       totalCost,
-      models
+      models,
     });
   });
 
@@ -576,7 +604,10 @@ export function getApiStats(usageData: any, modelPrices: Record<string, ModelPri
 /**
  * 获取模型统计数据
  */
-export function getModelStats(usageData: any, modelPrices: Record<string, ModelPrice>): Array<{
+export function getModelStats(
+  usageData: any,
+  modelPrices: Record<string, ModelPrice>
+): Array<{
   model: string;
   requests: number;
   tokens: number;
@@ -588,7 +619,7 @@ export function getModelStats(usageData: any, modelPrices: Record<string, ModelP
 
   const modelMap = new Map<string, { requests: number; tokens: number; cost: number }>();
 
-  Object.values(usageData.apis as Record<string, any>).forEach(apiData => {
+  Object.values(usageData.apis as Record<string, any>).forEach((apiData) => {
     const models = apiData?.models || {};
     Object.entries(models as Record<string, any>).forEach(([modelName, modelData]) => {
       const existing = modelMap.get(modelName) || { requests: 0, tokens: 0, cost: 0 };
@@ -640,7 +671,10 @@ export function formatDayLabel(date: Date): string {
 /**
  * 构建小时级别的数据序列
  */
-export function buildHourlySeriesByModel(usageData: any, metric: 'requests' | 'tokens' = 'requests'): {
+export function buildHourlySeriesByModel(
+  usageData: any,
+  metric: 'requests' | 'tokens' = 'requests'
+): {
   labels: string[];
   dataByModel: Map<string, number[]>;
   hasData: boolean;
@@ -668,7 +702,7 @@ export function buildHourlySeriesByModel(usageData: any, metric: 'requests' | 't
     return { labels, dataByModel, hasData };
   }
 
-  details.forEach(detail => {
+  details.forEach((detail) => {
     const timestamp = Date.parse(detail.timestamp);
     if (Number.isNaN(timestamp)) {
       return;
@@ -707,7 +741,10 @@ export function buildHourlySeriesByModel(usageData: any, metric: 'requests' | 't
 /**
  * 构建日级别的数据序列
  */
-export function buildDailySeriesByModel(usageData: any, metric: 'requests' | 'tokens' = 'requests'): {
+export function buildDailySeriesByModel(
+  usageData: any,
+  metric: 'requests' | 'tokens' = 'requests'
+): {
   labels: string[];
   dataByModel: Map<string, number[]>;
   hasData: boolean;
@@ -721,7 +758,7 @@ export function buildDailySeriesByModel(usageData: any, metric: 'requests' | 'to
     return { labels: [], dataByModel: new Map(), hasData };
   }
 
-  details.forEach(detail => {
+  details.forEach((detail) => {
     const timestamp = Date.parse(detail.timestamp);
     if (Number.isNaN(timestamp)) {
       return;
@@ -745,7 +782,7 @@ export function buildDailySeriesByModel(usageData: any, metric: 'requests' | 'to
   const labels = Array.from(labelsSet).sort();
   const dataByModel = new Map<string, number[]>();
   valuesByModel.forEach((dayMap, modelName) => {
-    const series = labels.map(label => dayMap.get(label) || 0);
+    const series = labels.map((label) => dayMap.get(label) || 0);
     dataByModel.set(modelName, series);
   });
 
@@ -756,7 +793,10 @@ export interface ChartDataset {
   label: string;
   data: number[];
   borderColor: string;
-  backgroundColor: string | CanvasGradient | ((context: ScriptableContext<'line'>) => string | CanvasGradient);
+  backgroundColor:
+    | string
+    | CanvasGradient
+    | ((context: ScriptableContext<'line'>) => string | CanvasGradient);
   pointBackgroundColor?: string;
   pointBorderColor?: string;
   fill: boolean;
@@ -805,7 +845,11 @@ const withAlpha = (hex: string, alpha: number) => {
   return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${clamped})`;
 };
 
-const buildAreaGradient = (context: ScriptableContext<'line'>, baseHex: string, fallback: string) => {
+const buildAreaGradient = (
+  context: ScriptableContext<'line'>,
+  baseHex: string,
+  fallback: string
+) => {
   const chart = context.chart;
   const ctx = chart.ctx;
   const area = chart.chartArea;
@@ -830,16 +874,17 @@ export function buildChartData(
   metric: 'requests' | 'tokens' = 'requests',
   selectedModels: string[] = []
 ): ChartData {
-  const baseSeries = period === 'hour'
-    ? buildHourlySeriesByModel(usageData, metric)
-    : buildDailySeriesByModel(usageData, metric);
+  const baseSeries =
+    period === 'hour'
+      ? buildHourlySeriesByModel(usageData, metric)
+      : buildDailySeriesByModel(usageData, metric);
 
   const { labels, dataByModel } = baseSeries;
 
   // Build "All" series as sum of all models
   const getAllSeries = (): number[] => {
     const summed = new Array(labels.length).fill(0);
-    dataByModel.forEach(values => {
+    dataByModel.forEach((values) => {
       values.forEach((value, idx) => {
         summed[idx] = (summed[idx] || 0) + value;
       });
@@ -852,7 +897,9 @@ export function buildChartData(
 
   const datasets: ChartDataset[] = modelsToShow.map((model, index) => {
     const isAll = model === 'all';
-    const data = isAll ? getAllSeries() : (dataByModel.get(model) || new Array(labels.length).fill(0));
+    const data = isAll
+      ? getAllSeries()
+      : dataByModel.get(model) || new Array(labels.length).fill(0);
     const colorIndex = index % CHART_COLORS.length;
     const style = CHART_COLORS[colorIndex];
     const shouldFill = modelsToShow.length === 1 || (isAll && modelsToShow.length > 1);
@@ -867,7 +914,7 @@ export function buildChartData(
       pointBackgroundColor: style.borderColor,
       pointBorderColor: style.borderColor,
       fill: shouldFill,
-      tension: 0.35
+      tension: 0.35,
     };
   });
 
@@ -970,11 +1017,14 @@ export function calculateStatusBarData(
     blocks,
     successRate,
     totalSuccess,
-    totalFailure
+    totalFailure,
   };
 }
 
-export function computeKeyStats(usageData: any, masker: (val: string) => string = maskApiKey): KeyStats {
+export function computeKeyStats(
+  usageData: any,
+  masker: (val: string) => string = maskApiKey
+): KeyStats {
   if (!usageData) {
     return { bySource: {}, byAuthIndex: {} };
   }
@@ -1024,6 +1074,6 @@ export function computeKeyStats(usageData: any, masker: (val: string) => string 
 
   return {
     bySource: sourceStats,
-    byAuthIndex: authIndexStats
+    byAuthIndex: authIndexStats,
   };
 }

@@ -5,7 +5,7 @@ import type {
   OpenAIProviderConfig,
   ProviderKeyConfig,
   AmpcodeConfig,
-  AmpcodeModelMapping
+  AmpcodeModelMapping,
 } from '@/types';
 import type { Config } from '@/types/config';
 import { buildHeaderObject } from '@/utils/headers';
@@ -54,7 +54,11 @@ const normalizeHeaders = (headers: any) => {
 };
 
 const normalizeExcludedModels = (input: any): string[] => {
-  const rawList = Array.isArray(input) ? input : typeof input === 'string' ? input.split(/[\n,]/) : [];
+  const rawList = Array.isArray(input)
+    ? input
+    : typeof input === 'string'
+      ? input.split(/[\n,]/)
+      : [];
   const seen = new Set<string>();
   const normalized: string[] = [];
 
@@ -78,7 +82,8 @@ const normalizePrefix = (value: any): string | undefined => {
 
 const normalizeApiKeyEntry = (entry: any): ApiKeyEntry | null => {
   if (!entry) return null;
-  const apiKey = entry['api-key'] ?? entry.apiKey ?? entry.key ?? (typeof entry === 'string' ? entry : '');
+  const apiKey =
+    entry['api-key'] ?? entry.apiKey ?? entry.key ?? (typeof entry === 'string' ? entry : '');
   const trimmed = String(apiKey || '').trim();
   if (!trimmed) return null;
 
@@ -88,7 +93,7 @@ const normalizeApiKeyEntry = (entry: any): ApiKeyEntry | null => {
   return {
     apiKey: trimmed,
     proxyUrl: proxyUrl ? String(proxyUrl) : undefined,
-    headers
+    headers,
   };
 };
 
@@ -110,7 +115,10 @@ const normalizeProviderKeyConfig = (item: any): ProviderKeyConfig | null => {
   const models = normalizeModelAliases(item.models);
   if (models.length) config.models = models;
   const excludedModels = normalizeExcludedModels(
-    item['excluded-models'] ?? item.excludedModels ?? item['excluded_models'] ?? item.excluded_models
+    item['excluded-models'] ??
+      item.excludedModels ??
+      item['excluded_models'] ??
+      item.excluded_models
   );
   if (excludedModels.length) config.excludedModels = excludedModels;
   return config;
@@ -162,7 +170,7 @@ const normalizeOpenAIProvider = (provider: any): OpenAIProviderConfig | null => 
   const result: OpenAIProviderConfig = {
     name: String(name),
     baseUrl: String(baseUrl),
-    apiKeyEntries
+    apiKeyEntries,
   };
 
   const prefix = normalizePrefix(provider.prefix ?? provider['prefix']);
@@ -214,7 +222,8 @@ const normalizeAmpcodeConfig = (payload: any): AmpcodeConfig | undefined => {
   const config: AmpcodeConfig = {};
   const upstreamUrl = source['upstream-url'] ?? source.upstreamUrl ?? source['upstream_url'];
   if (upstreamUrl) config.upstreamUrl = String(upstreamUrl);
-  const upstreamApiKey = source['upstream-api-key'] ?? source.upstreamApiKey ?? source['upstream_api_key'];
+  const upstreamApiKey =
+    source['upstream-api-key'] ?? source.upstreamApiKey ?? source['upstream_api_key'];
   if (upstreamApiKey) config.upstreamApiKey = String(upstreamApiKey);
 
   const forceModelMappings = normalizeBoolean(
@@ -251,7 +260,7 @@ export const normalizeConfigResponse = (raw: any): Config => {
   if (quota && typeof quota === 'object') {
     config.quotaExceeded = {
       switchProject: quota['switch-project'] ?? quota.switchProject,
-      switchPreviewModel: quota['switch-preview-model'] ?? quota.switchPreviewModel
+      switchPreviewModel: quota['switch-preview-model'] ?? quota.switchPreviewModel,
     };
   }
 
@@ -297,7 +306,8 @@ export const normalizeConfigResponse = (raw: any): Config => {
       .filter(Boolean) as ProviderKeyConfig[];
   }
 
-  const openaiList = raw['openai-compatibility'] ?? raw.openaiCompatibility ?? raw.openAICompatibility;
+  const openaiList =
+    raw['openai-compatibility'] ?? raw.openaiCompatibility ?? raw.openAICompatibility;
   if (Array.isArray(openaiList)) {
     config.openaiCompatibility = openaiList
       .map((item: any) => normalizeOpenAIProvider(item))
@@ -309,7 +319,9 @@ export const normalizeConfigResponse = (raw: any): Config => {
     config.ampcode = ampcode;
   }
 
-  const oauthExcluded = normalizeOauthExcluded(raw['oauth-excluded-models'] ?? raw.oauthExcludedModels);
+  const oauthExcluded = normalizeOauthExcluded(
+    raw['oauth-excluded-models'] ?? raw.oauthExcludedModels
+  );
   if (oauthExcluded) {
     config.oauthExcludedModels = oauthExcluded;
   }
@@ -326,5 +338,5 @@ export {
   normalizeHeaders,
   normalizeExcludedModels,
   normalizeAmpcodeConfig,
-  normalizeAmpcodeModelMappings
+  normalizeAmpcodeModelMappings,
 };

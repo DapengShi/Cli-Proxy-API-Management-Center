@@ -63,7 +63,9 @@ export function ApiDetailsCard({ apiStats, loading, hasPrices }: ApiDetailsCardP
                       <span className={styles.modelStat}>
                         {stats.requests} {t('usage_stats.requests_count')}
                       </span>
-                      <span className={styles.modelStat}>{formatTokensInMillions(stats.tokens)}</span>
+                      <span className={styles.modelStat}>
+                        {formatTokensInMillions(stats.tokens)}
+                      </span>
                     </div>
                   ))}
                 </div>

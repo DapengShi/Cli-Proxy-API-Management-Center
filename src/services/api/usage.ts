@@ -31,7 +31,8 @@ export const usageApi = {
   /**
    * 导出使用统计快照
    */
-  exportUsage: () => apiClient.get<UsageExportPayload>('/usage/export', { timeout: USAGE_TIMEOUT_MS }),
+  exportUsage: () =>
+    apiClient.get<UsageExportPayload>('/usage/export', { timeout: USAGE_TIMEOUT_MS }),
 
   /**
    * 导入使用统计快照
@@ -49,5 +50,5 @@ export const usageApi = {
       payload = response?.usage ?? response;
     }
     return computeKeyStats(payload);
-  }
+  },
 };

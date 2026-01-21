@@ -58,8 +58,12 @@ export function AmpcodeSection({
         ) : (
           <>
             <div className={styles.fieldRow}>
-              <span className={styles.fieldLabel}>{t('ai_providers.ampcode_upstream_url_label')}:</span>
-              <span className={styles.fieldValue}>{config?.upstreamUrl || t('common.not_set')}</span>
+              <span className={styles.fieldLabel}>
+                {t('ai_providers.ampcode_upstream_url_label')}:
+              </span>
+              <span className={styles.fieldValue}>
+                {config?.upstreamUrl || t('common.not_set')}
+              </span>
             </div>
             <div className={styles.fieldRow}>
               <span className={styles.fieldLabel}>
@@ -78,7 +82,9 @@ export function AmpcodeSection({
               </span>
             </div>
             <div className={styles.fieldRow} style={{ marginTop: 8 }}>
-              <span className={styles.fieldLabel}>{t('ai_providers.ampcode_model_mappings_count')}:</span>
+              <span className={styles.fieldLabel}>
+                {t('ai_providers.ampcode_model_mappings_count')}:
+              </span>
               <span className={styles.fieldValue}>{config?.modelMappings?.length || 0}</span>
             </div>
             {config?.modelMappings?.length ? (

@@ -26,7 +26,10 @@ export function ConfigPage() {
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
+  const [searchResults, setSearchResults] = useState<{ current: number; total: number }>({
+    current: 0,
+    total: 0,
+  });
   const [lastSearchedQuery, setLastSearchedQuery] = useState('');
   const editorRef = useRef<ReactCodeMirrorRef>(null);
   const floatingControlsRef = useRef<HTMLDivElement>(null);
@@ -132,7 +135,7 @@ export function ConfigPage() {
     // Scroll to and select the match
     view.dispatch({
       selection: { anchor: matchPos, head: matchPos + query.length },
-      scrollIntoView: true
+      scrollIntoView: true,
     });
     view.focus();
   }, []);
@@ -148,18 +151,24 @@ export function ConfigPage() {
     }
   }, []);
 
-  const executeSearch = useCallback((direction: 'next' | 'prev' = 'next') => {
-    if (!searchQuery) return;
-    setLastSearchedQuery(searchQuery);
-    performSearch(searchQuery, direction);
-  }, [searchQuery, performSearch]);
+  const executeSearch = useCallback(
+    (direction: 'next' | 'prev' = 'next') => {
+      if (!searchQuery) return;
+      setLastSearchedQuery(searchQuery);
+      performSearch(searchQuery, direction);
+    },
+    [searchQuery, performSearch]
+  );
 
-  const handleSearchKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      executeSearch(e.shiftKey ? 'prev' : 'next');
-    }
-  }, [executeSearch]);
+  const handleSearchKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        executeSearch(e.shiftKey ? 'prev' : 'next');
+      }
+    },
+    [executeSearch]
+  );
 
   const handlePrevMatch = useCallback(() => {
     if (!lastSearchedQuery) return;
@@ -195,12 +204,10 @@ export function ConfigPage() {
   }, []);
 
   // CodeMirror extensions
-  const extensions = useMemo(() => [
-    yaml(),
-    search(),
-    highlightSelectionMatches(),
-    keymap.of(searchKeymap)
-  ], []);
+  const extensions = useMemo(
+    () => [yaml(), search(), highlightSelectionMatches(), keymap.of(searchKeymap)],
+    []
+  );
 
   // Status text
   const getStatusText = () => {
@@ -237,7 +244,7 @@ export function ConfigPage() {
                   onChange={(e) => handleSearchChange(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
                   placeholder={t('config_management.search_placeholder', {
-                    defaultValue: '搜索配置内容...'
+                    defaultValue: '搜索配置内容...',
                   })}
                   disabled={disableControls || loading}
                   className={styles.searchInput}
@@ -268,7 +275,9 @@ export function ConfigPage() {
                   variant="secondary"
                   size="sm"
                   onClick={handlePrevMatch}
-                  disabled={!searchQuery || lastSearchedQuery !== searchQuery || searchResults.total === 0}
+                  disabled={
+                    !searchQuery || lastSearchedQuery !== searchQuery || searchResults.total === 0
+                  }
                   title={t('config_management.search_prev', { defaultValue: '上一个' })}
                 >
                   <IconChevronUp size={16} />
@@ -277,7 +286,9 @@ export function ConfigPage() {
                   variant="secondary"
                   size="sm"
                   onClick={handleNextMatch}
-                  disabled={!searchQuery || lastSearchedQuery !== searchQuery || searchResults.total === 0}
+                  disabled={
+                    !searchQuery || lastSearchedQuery !== searchQuery || searchResults.total === 0
+                  }
                   title={t('config_management.search_next', { defaultValue: '下一个' })}
                 >
                   <IconChevronDown size={16} />
@@ -312,21 +323,24 @@ export function ConfigPage() {
                 searchKeymap: true,
                 foldKeymap: true,
                 completionKeymap: false,
-                lintKeymap: true
+                lintKeymap: true,
               }}
             />
           </div>
 
           {/* Controls */}
           <div className={styles.controls}>
-            <span className={`${styles.status} ${getStatusClass()}`}>
-              {getStatusText()}
-            </span>
+            <span className={`${styles.status} ${getStatusClass()}`}>{getStatusText()}</span>
             <div className={styles.actions}>
               <Button variant="secondary" size="sm" onClick={loadConfig} disabled={loading}>
                 {t('config_management.reload')}
               </Button>
-              <Button size="sm" onClick={handleSave} loading={saving} disabled={disableControls || loading || !dirty}>
+              <Button
+                size="sm"
+                onClick={handleSave}
+                loading={saving}
+                disabled={disableControls || loading || !dirty}
+              >
                 {t('config_management.save')}
               </Button>
             </div>

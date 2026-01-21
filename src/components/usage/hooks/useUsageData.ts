@@ -115,7 +115,7 @@ export function useUsageData(): UseUsageDataReturn {
           added: result?.added ?? 0,
           skipped: result?.skipped ?? 0,
           total: result?.total_requests ?? 0,
-          failed: result?.failed_requests ?? 0
+          failed: result?.failed_requests ?? 0,
         }),
         'success'
       );
@@ -148,6 +148,6 @@ export function useUsageData(): UseUsageDataReturn {
     handleImportChange,
     importInputRef,
     exporting,
-    importing
+    importing,
   };
 }

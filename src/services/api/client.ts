@@ -9,7 +9,7 @@ import {
   BUILD_DATE_HEADER_KEYS,
   MANAGEMENT_API_PREFIX,
   REQUEST_TIMEOUT_MS,
-  VERSION_HEADER_KEYS
+  VERSION_HEADER_KEYS,
 } from '@/utils/constants';
 
 class ApiClient {
@@ -21,8 +21,8 @@ class ApiClient {
     this.instance = axios.create({
       timeout: REQUEST_TIMEOUT_MS,
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     });
 
     this.setupInterceptors();
@@ -68,7 +68,9 @@ class ApiClient {
     const normalizeValue = (value: unknown): string | null => {
       if (value === undefined || value === null) return null;
       if (Array.isArray(value)) {
-        const first = value.find((entry) => entry !== undefined && entry !== null && String(entry).trim());
+        const first = value.find(
+          (entry) => entry !== undefined && entry !== null && String(entry).trim()
+        );
         return first !== undefined ? String(first) : null;
       }
       const text = String(value);
@@ -133,7 +135,7 @@ class ApiClient {
         if (version || buildDate) {
           window.dispatchEvent(
             new CustomEvent('server-version-update', {
-              detail: { version: version || null, buildDate: buildDate || null }
+              detail: { version: version || null, buildDate: buildDate || null },
             })
           );
         }
@@ -150,7 +152,8 @@ class ApiClient {
   private handleError(error: any): ApiError {
     if (axios.isAxiosError(error)) {
       const responseData = error.response?.data as any;
-      const message = responseData?.error || responseData?.message || error.message || 'Request failed';
+      const message =
+        responseData?.error || responseData?.message || error.message || 'Request failed';
       const apiError = new Error(message) as ApiError;
       apiError.name = 'ApiError';
       apiError.status = error.response?.status;
@@ -221,13 +224,17 @@ class ApiClient {
   /**
    * 发送 FormData
    */
-  async postForm<T = any>(url: string, formData: FormData, config?: AxiosRequestConfig): Promise<T> {
+  async postForm<T = any>(
+    url: string,
+    formData: FormData,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
     const response = await this.instance.post<T>(url, formData, {
       ...config,
       headers: {
         ...(config?.headers || {}),
-        'Content-Type': 'multipart/form-data'
-      }
+        'Content-Type': 'multipart/form-data',
+      },
     });
     return response.data;
   }

@@ -16,7 +16,9 @@ import type {
   CodexUsagePayload,
   GeminiCliParsedBucket,
   GeminiCliQuotaBucketState,
-  GeminiCliQuotaState
+  GeminiCliQuotaState,
+  ClaudeQuotaState,
+  ClaudeQuotaWindow,
 } from '@/types';
 import { apiCallApi, authFilesApi, getApiCallErrorMessage } from '@/services/api';
 import {
@@ -26,6 +28,8 @@ import {
   CODEX_REQUEST_HEADERS,
   GEMINI_CLI_QUOTA_URL,
   GEMINI_CLI_REQUEST_HEADERS,
+  CLAUDE_USAGE_URL,
+  CLAUDE_REQUEST_HEADERS,
   normalizeAuthIndexValue,
   normalizeNumberValue,
   normalizePlanType,
@@ -34,6 +38,7 @@ import {
   parseAntigravityPayload,
   parseCodexUsagePayload,
   parseGeminiCliQuotaPayload,
+  parseClaudeUsagePayload,
   resolveCodexChatgptAccountId,
   resolveCodexPlanType,
   resolveGeminiCliProjectId,
@@ -46,14 +51,15 @@ import {
   isAntigravityFile,
   isCodexFile,
   isGeminiCliFile,
-  isRuntimeOnlyAuthFile
+  isClaudeFile,
+  isRuntimeOnlyAuthFile,
 } from '@/utils/quota';
 import type { QuotaRenderHelpers } from './QuotaCard';
 import styles from '@/pages/QuotaPage.module.scss';
 
 type QuotaUpdater<T> = T | ((prev: T) => T);
 
-type QuotaType = 'antigravity' | 'codex' | 'gemini-cli';
+type QuotaType = 'antigravity' | 'codex' | 'gemini-cli' | 'claude';
 
 const DEFAULT_ANTIGRAVITY_PROJECT_ID = 'bamboo-precept-lgxtn';
 
@@ -61,9 +67,11 @@ export interface QuotaStore {
   antigravityQuota: Record<string, AntigravityQuotaState>;
   codexQuota: Record<string, CodexQuotaState>;
   geminiCliQuota: Record<string, GeminiCliQuotaState>;
+  claudeQuota: Record<string, ClaudeQuotaState>;
   setAntigravityQuota: (updater: QuotaUpdater<Record<string, AntigravityQuotaState>>) => void;
   setCodexQuota: (updater: QuotaUpdater<Record<string, CodexQuotaState>>) => void;
   setGeminiCliQuota: (updater: QuotaUpdater<Record<string, GeminiCliQuotaState>>) => void;
+  setClaudeQuota: (updater: QuotaUpdater<Record<string, ClaudeQuotaState>>) => void;
   clearQuotaCache: () => void;
 }
 
@@ -147,7 +155,7 @@ const fetchAntigravityQuota = async (
           method: 'POST',
           url,
           header: { ...ANTIGRAVITY_REQUEST_HEADERS },
-          data: requestBodies[attempt]
+          data: requestBodies[attempt],
         });
 
         if (result.statusCode < 200 || result.statusCode >= 300) {
@@ -203,7 +211,8 @@ const fetchAntigravityQuota = async (
 
 const buildCodexQuotaWindows = (payload: CodexUsagePayload, t: TFunction): CodexQuotaWindow[] => {
   const rateLimit = payload.rate_limit ?? payload.rateLimit ?? undefined;
-  const codeReviewLimit = payload.code_review_rate_limit ?? payload.codeReviewRateLimit ?? undefined;
+  const codeReviewLimit =
+    payload.code_review_rate_limit ?? payload.codeReviewRateLimit ?? undefined;
   const windows: CodexQuotaWindow[] = [];
 
   const addWindow = (
@@ -223,7 +232,7 @@ const buildCodexQuotaWindows = (payload: CodexUsagePayload, t: TFunction): Codex
       label: t(labelKey),
       labelKey,
       usedPercent,
-      resetLabel
+      resetLabel,
     });
   };
 
@@ -270,14 +279,14 @@ const fetchCodexQuota = async (
 
   const requestHeader: Record<string, string> = {
     ...CODEX_REQUEST_HEADERS,
-    'Chatgpt-Account-Id': accountId
+    'Chatgpt-Account-Id': accountId,
   };
 
   const result = await apiCallApi.request({
     authIndex,
     method: 'GET',
     url: CODEX_USAGE_URL,
-    header: requestHeader
+    header: requestHeader,
   });
 
   if (result.statusCode < 200 || result.statusCode >= 300) {
@@ -314,7 +323,7 @@ const fetchGeminiCliQuota = async (
     method: 'POST',
     url: GEMINI_CLI_QUOTA_URL,
     header: { ...GEMINI_CLI_REQUEST_HEADERS },
-    data: JSON.stringify({ project: projectId })
+    data: JSON.stringify({ project: projectId }),
   });
 
   if (result.statusCode < 200 || result.statusCode >= 300) {
@@ -333,7 +342,9 @@ const fetchGeminiCliQuota = async (
       const remainingFractionRaw = normalizeQuotaFraction(
         bucket.remainingFraction ?? bucket.remaining_fraction
       );
-      const remainingAmount = normalizeNumberValue(bucket.remainingAmount ?? bucket.remaining_amount);
+      const remainingAmount = normalizeNumberValue(
+        bucket.remainingAmount ?? bucket.remaining_amount
+      );
       const resetTime = normalizeStringValue(bucket.resetTime ?? bucket.reset_time) ?? undefined;
       let fallbackFraction: number | null = null;
       if (remainingAmount !== null) {
@@ -347,7 +358,7 @@ const fetchGeminiCliQuota = async (
         tokenType,
         remainingFraction,
         remainingAmount,
-        resetTime
+        resetTime,
       };
     })
     .filter((bucket): bucket is GeminiCliParsedBucket => bucket !== null);
@@ -379,11 +390,7 @@ const renderAntigravityItems = (
       h(
         'div',
         { className: styleMap.quotaRowHeader },
-        h(
-          'span',
-          { className: styleMap.quotaModel, title: group.models.join(', ') },
-          group.label
-        ),
+        h('span', { className: styleMap.quotaModel, title: group.models.join(', ') }, group.label),
         h(
           'div',
           { className: styleMap.quotaMeta },
@@ -432,11 +439,7 @@ const renderCodexItems = (
 
   if (isFreePlan) {
     nodes.push(
-      h(
-        'div',
-        { key: 'warning', className: styleMap.quotaWarning },
-        t('codex_quota.no_access')
-      )
+      h('div', { key: 'warning', className: styleMap.quotaWarning }, t('codex_quota.no_access'))
     );
     return h(Fragment, null, ...nodes);
   }
@@ -500,7 +503,7 @@ const renderGeminiCliItems = (
       bucket.remainingAmount === null || bucket.remainingAmount === undefined
         ? null
         : t('gemini_cli_quota.remaining_amount', {
-            count: bucket.remainingAmount
+            count: bucket.remainingAmount,
           });
     const titleBase =
       bucket.modelIds && bucket.modelIds.length > 0 ? bucket.modelIds.join(', ') : bucket.label;
@@ -543,13 +546,13 @@ export const ANTIGRAVITY_CONFIG: QuotaConfig<AntigravityQuotaState, AntigravityQ
     status: 'error',
     groups: [],
     error: message,
-    errorStatus: status
+    errorStatus: status,
   }),
   cardClassName: styles.antigravityCard,
   controlsClassName: styles.antigravityControls,
   controlClassName: styles.antigravityControl,
   gridClassName: styles.antigravityGrid,
-  renderQuotaItems: renderAntigravityItems
+  renderQuotaItems: renderAntigravityItems,
 };
 
 export const CODEX_CONFIG: QuotaConfig<
@@ -566,19 +569,19 @@ export const CODEX_CONFIG: QuotaConfig<
   buildSuccessState: (data) => ({
     status: 'success',
     windows: data.windows,
-    planType: data.planType
+    planType: data.planType,
   }),
   buildErrorState: (message, status) => ({
     status: 'error',
     windows: [],
     error: message,
-    errorStatus: status
+    errorStatus: status,
   }),
   cardClassName: styles.codexCard,
   controlsClassName: styles.codexControls,
   controlClassName: styles.codexControl,
   gridClassName: styles.codexGrid,
-  renderQuotaItems: renderCodexItems
+  renderQuotaItems: renderCodexItems,
 };
 
 export const GEMINI_CLI_CONFIG: QuotaConfig<GeminiCliQuotaState, GeminiCliQuotaBucketState[]> = {
@@ -594,11 +597,129 @@ export const GEMINI_CLI_CONFIG: QuotaConfig<GeminiCliQuotaState, GeminiCliQuotaB
     status: 'error',
     buckets: [],
     error: message,
-    errorStatus: status
+    errorStatus: status,
   }),
   cardClassName: styles.geminiCliCard,
   controlsClassName: styles.geminiCliControls,
   controlClassName: styles.geminiCliControl,
   gridClassName: styles.geminiCliGrid,
-  renderQuotaItems: renderGeminiCliItems
+  renderQuotaItems: renderGeminiCliItems,
+};
+
+const fetchClaudeQuota = async (file: AuthFileItem, t: TFunction): Promise<ClaudeQuotaWindow[]> => {
+  const rawAuthIndex = file['auth_index'] ?? file.authIndex;
+  const authIndex = normalizeAuthIndexValue(rawAuthIndex);
+  if (!authIndex) {
+    throw new Error(t('claude_quota.missing_auth_index'));
+  }
+
+  const result = await apiCallApi.request({
+    authIndex,
+    method: 'GET',
+    url: CLAUDE_USAGE_URL,
+    header: { ...CLAUDE_REQUEST_HEADERS },
+  });
+
+  if (result.statusCode < 200 || result.statusCode >= 300) {
+    throw createStatusError(getApiCallErrorMessage(result), result.statusCode);
+  }
+
+  const payload = parseClaudeUsagePayload(result.body ?? result.bodyText);
+  if (!payload) {
+    throw new Error(t('claude_quota.empty_windows'));
+  }
+
+  const fiveHour = payload.five_hour ?? payload.fiveHour;
+  const sevenDay = payload.seven_day ?? payload.sevenDay;
+  const windows: ClaudeQuotaWindow[] = [];
+
+  if (fiveHour) {
+    const utilization = normalizeNumberValue(fiveHour.utilization);
+    const resetTime = normalizeStringValue(fiveHour.resets_at ?? fiveHour.resetsAt) ?? undefined;
+
+    windows.push({
+      id: '5h',
+      label: t('claude_quota.five_hour_window'),
+      labelKey: 'claude_quota.five_hour_window',
+      utilization,
+      resetTime,
+    });
+  }
+
+  if (sevenDay) {
+    const utilization = normalizeNumberValue(sevenDay.utilization);
+    const resetTime = normalizeStringValue(sevenDay.resets_at ?? sevenDay.resetsAt) ?? undefined;
+
+    windows.push({
+      id: '7d',
+      label: t('claude_quota.seven_day_window'),
+      labelKey: 'claude_quota.seven_day_window',
+      utilization,
+      resetTime,
+    });
+  }
+
+  return windows;
+};
+
+const renderClaudeItems = (
+  quota: ClaudeQuotaState,
+  t: TFunction,
+  helpers: QuotaRenderHelpers
+): ReactNode => {
+  const { styles: styleMap, QuotaProgressBar } = helpers;
+  const { createElement: h } = React;
+  const windows = quota.windows ?? [];
+
+  if (windows.length === 0) {
+    return h('div', { className: styleMap.quotaMessage }, t('claude_quota.empty_windows'));
+  }
+
+  return windows.map((window) => {
+    const utilization = window.utilization;
+    const clamped = utilization === null ? null : Math.max(0, Math.min(100, utilization));
+    const remaining = clamped === null ? null : Math.max(0, Math.min(100, 100 - clamped));
+    const percentLabel = remaining === null ? '--' : `${Math.round(remaining)}%`;
+    const windowLabel = window.labelKey ? t(window.labelKey) : window.label;
+    const resetLabel = formatQuotaResetTime(window.resetTime);
+
+    return h(
+      'div',
+      { key: window.id, className: styleMap.quotaRow },
+      h(
+        'div',
+        { className: styleMap.quotaRowHeader },
+        h('span', { className: styleMap.quotaModel }, windowLabel),
+        h(
+          'div',
+          { className: styleMap.quotaMeta },
+          h('span', { className: styleMap.quotaPercent }, percentLabel),
+          h('span', { className: styleMap.quotaReset }, resetLabel)
+        )
+      ),
+      h(QuotaProgressBar, { percent: remaining, highThreshold: 80, mediumThreshold: 50 })
+    );
+  });
+};
+
+export const CLAUDE_CONFIG: QuotaConfig<ClaudeQuotaState, ClaudeQuotaWindow[]> = {
+  type: 'claude',
+  i18nPrefix: 'claude_quota',
+  filterFn: (file) => isClaudeFile(file),
+  fetchQuota: fetchClaudeQuota,
+  storeSelector: (state) => state.claudeQuota,
+  storeSetter: 'setClaudeQuota',
+  buildLoadingState: () => ({ status: 'loading', windows: [] }),
+  buildSuccessState: (windows) => ({ status: 'success', windows }),
+  buildErrorState: (message, status) => ({
+    status: 'error',
+    windows: [],
+    error: message,
+    errorStatus: status,
+  }),
+  cardClassName: styles.claudeCard,
+  controlsClassName: styles.claudeControls,
+  controlClassName: styles.claudeControl,
+  gridClassName: styles.claudeGrid,
+  renderQuotaItems: renderClaudeItems,
 };

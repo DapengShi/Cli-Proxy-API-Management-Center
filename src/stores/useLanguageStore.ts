@@ -31,10 +31,10 @@ export const useLanguageStore = create<LanguageState>()(
         const { language, setLanguage } = get();
         const newLanguage: Language = language === 'zh-CN' ? 'en' : 'zh-CN';
         setLanguage(newLanguage);
-      }
+      },
     }),
     {
-      name: STORAGE_KEY_LANGUAGE
+      name: STORAGE_KEY_LANGUAGE,
     }
   )
 );

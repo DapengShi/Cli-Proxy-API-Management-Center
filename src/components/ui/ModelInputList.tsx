@@ -23,7 +23,7 @@ export const modelsToEntries = (models?: ModelAlias[]): ModelEntry[] => {
   }
   return models.map((m) => ({
     name: m.name || '',
-    alias: m.alias || ''
+    alias: m.alias || '',
   }));
 };
 
@@ -46,12 +46,14 @@ export function ModelInputList({
   addLabel,
   disabled = false,
   namePlaceholder = 'model-name',
-  aliasPlaceholder = 'alias (optional)'
+  aliasPlaceholder = 'alias (optional)',
 }: ModelInputListProps) {
   const currentEntries = entries.length ? entries : [{ name: '', alias: '' }];
 
   const updateEntry = (index: number, field: 'name' | 'alias', value: string) => {
-    const next = currentEntries.map((entry, idx) => (idx === index ? { ...entry, [field]: value } : entry));
+    const next = currentEntries.map((entry, idx) =>
+      idx === index ? { ...entry, [field]: value } : entry
+    );
     onChange(next);
   };
 
@@ -97,7 +99,13 @@ export function ModelInputList({
           </div>
         </Fragment>
       ))}
-      <Button variant="secondary" size="sm" onClick={addEntry} disabled={disabled} className="align-start">
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={addEntry}
+        disabled={disabled}
+        className="align-start"
+      >
         {addLabel}
       </Button>
     </div>

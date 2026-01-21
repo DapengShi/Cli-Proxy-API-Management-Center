@@ -9,7 +9,7 @@ import {
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
 } from 'chart.js';
 import { Button } from '@/components/ui/Button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -25,7 +25,7 @@ import {
   PriceSettingsCard,
   useUsageData,
   useSparklines,
-  useChartData
+  useChartData,
 } from '@/components/usage';
 import { getModelNamesFromUsage, getApiStats, getModelStats } from '@/utils/usage';
 import styles from './UsagePage.module.scss';
@@ -61,7 +61,7 @@ export function UsagePage() {
     handleImportChange,
     importInputRef,
     exporting,
-    importing
+    importing,
   } = useUsageData();
 
   useHeaderRefresh(loadUsage);
@@ -71,13 +71,8 @@ export function UsagePage() {
   const MAX_CHART_LINES = 9;
 
   // Sparklines hook
-  const {
-    requestsSparkline,
-    tokensSparkline,
-    rpmSparkline,
-    tpmSparkline,
-    costSparkline
-  } = useSparklines({ usage, loading });
+  const { requestsSparkline, tokensSparkline, rpmSparkline, tpmSparkline, costSparkline } =
+    useSparklines({ usage, loading });
 
   // Chart data hook
   const {
@@ -88,7 +83,7 @@ export function UsagePage() {
     requestsChartData,
     tokensChartData,
     requestsChartOptions,
-    tokensChartOptions
+    tokensChartOptions,
   } = useChartData({ usage, chartLines, isDark, isMobile });
 
   // Derived data
@@ -159,7 +154,7 @@ export function UsagePage() {
           tokens: tokensSparkline,
           rpm: rpmSparkline,
           tpm: tpmSparkline,
-          cost: costSparkline
+          cost: costSparkline,
         }}
       />
 

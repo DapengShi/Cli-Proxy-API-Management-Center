@@ -23,11 +23,7 @@ type Layer = {
 
 type TransitionDirection = 'forward' | 'backward';
 
-export function PageTransition({
-  render,
-  getRouteOrder,
-  scrollContainerRef,
-}: PageTransitionProps) {
+export function PageTransition({ render, getRouteOrder, scrollContainerRef }: PageTransitionProps) {
   const location = useLocation();
   const currentLayerRef = useRef<HTMLDivElement>(null);
   const exitingLayerRef = useRef<HTMLDivElement>(null);

@@ -148,7 +148,7 @@ export function ApiKeysPage() {
         } catch (err: any) {
           showNotification(`${t('notification.delete_failed')}: ${err?.message || ''}`, 'error');
         }
-      }
+      },
     });
   };
 
@@ -194,7 +194,12 @@ export function ApiKeysPage() {
                   <div className="item-subtitle">{maskApiKey(String(key || ''))}</div>
                 </div>
                 <div className="item-actions">
-                  <Button variant="secondary" size="sm" onClick={() => openEditModal(index)} disabled={disableControls}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => openEditModal(index)}
+                    disabled={disableControls}
+                  >
                     {t('common.edit')}
                   </Button>
                   <Button
@@ -214,7 +219,9 @@ export function ApiKeysPage() {
         <Modal
           open={modalOpen}
           onClose={closeModal}
-          title={editingIndex !== null ? t('api_keys.edit_modal_title') : t('api_keys.add_modal_title')}
+          title={
+            editingIndex !== null ? t('api_keys.edit_modal_title') : t('api_keys.add_modal_title')
+          }
           footer={
             <>
               <Button variant="secondary" onClick={closeModal} disabled={saving}>
@@ -228,7 +235,9 @@ export function ApiKeysPage() {
         >
           <Input
             label={
-              editingIndex !== null ? t('api_keys.edit_modal_key_label') : t('api_keys.add_modal_key_label')
+              editingIndex !== null
+                ? t('api_keys.edit_modal_key_label')
+                : t('api_keys.add_modal_key_label')
             }
             placeholder={
               editingIndex !== null

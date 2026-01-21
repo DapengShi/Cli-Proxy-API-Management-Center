@@ -14,7 +14,9 @@ export function Input({ label, hint, error, rightElement, className = '', ...res
       <div style={{ position: 'relative' }}>
         <input className={`input ${className}`.trim()} {...rest} />
         {rightElement && (
-          <div style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}>
+          <div
+            style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}
+          >
             {rightElement}
           </div>
         )}

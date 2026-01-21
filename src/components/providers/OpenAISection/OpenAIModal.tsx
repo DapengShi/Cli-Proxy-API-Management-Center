@@ -203,7 +203,10 @@ export function OpenAIModal({
 
     setDiscoveryOpen(false);
     if (addedCount > 0) {
-      showNotification(t('ai_providers.openai_models_fetch_added', { count: addedCount }), 'success');
+      showNotification(
+        t('ai_providers.openai_models_fetch_added', { count: addedCount }),
+        'success'
+      );
     }
   };
 
@@ -282,11 +285,14 @@ export function OpenAIModal({
       setTestStatus('error');
       const message = getErrorMessage(err);
       const errorCode =
-        typeof err === 'object' && err !== null && 'code' in err ? String((err as { code?: string }).code) : '';
-      const isTimeout =
-        errorCode === 'ECONNABORTED' || message.toLowerCase().includes('timeout');
+        typeof err === 'object' && err !== null && 'code' in err
+          ? String((err as { code?: string }).code)
+          : '';
+      const isTimeout = errorCode === 'ECONNABORTED' || message.toLowerCase().includes('timeout');
       if (isTimeout) {
-        setTestMessage(t('ai_providers.openai_test_timeout', { seconds: OPENAI_TEST_TIMEOUT_MS / 1000 }));
+        setTestMessage(
+          t('ai_providers.openai_test_timeout', { seconds: OPENAI_TEST_TIMEOUT_MS / 1000 })
+        );
       } else {
         setTestMessage(`${t('ai_providers.openai_test_failed')}: ${message}`);
       }
@@ -355,7 +361,12 @@ export function OpenAIModal({
             aliasPlaceholder={t('common.model_alias_placeholder')}
             disabled={isSaving}
           />
-          <Button variant="secondary" size="sm" onClick={openOpenaiModelDiscovery} disabled={isSaving}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={openOpenaiModelDiscovery}
+            disabled={isSaving}
+          >
             {t('ai_providers.openai_models_fetch_button')}
           </Button>
         </div>

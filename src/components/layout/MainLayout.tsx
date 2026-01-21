@@ -129,7 +129,13 @@ const headerIcons = {
         </clipPath>
       </defs>
       <circle cx="12" cy="12" r="4" />
-      <circle cx="12" cy="12" r="4" clipPath="url(#mainLayoutAutoThemeSunLeftHalf)" fill="currentColor" />
+      <circle
+        cx="12"
+        cy="12"
+        r="4"
+        clipPath="url(#mainLayoutAutoThemeSunLeftHalf)"
+        fill="currentColor"
+      />
       <path d="M12 2v2" />
       <path d="M12 20v2" />
       <path d="M4.93 4.93l1.41 1.41" />
@@ -345,7 +351,6 @@ export function MainLayout() {
     });
   }, [fetchConfig]);
 
-
   const statusClass =
     connectionStatus === 'connected'
       ? 'success'
@@ -387,7 +392,7 @@ export function MainLayout() {
     clearCache();
     const results = await Promise.allSettled([
       fetchConfig(undefined, true),
-      triggerHeaderRefresh()
+      triggerHeaderRefresh(),
     ]);
     const rejected = results.find((result) => result.status === 'rejected');
     if (rejected && rejected.status === 'rejected') {

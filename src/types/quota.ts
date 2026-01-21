@@ -144,3 +144,32 @@ export interface CodexQuotaState {
   error?: string;
   errorStatus?: number;
 }
+
+// Claude OAuth quota types
+export interface ClaudeUsageWindow {
+  utilization?: number;
+  resets_at?: string;
+  resetsAt?: string;
+}
+
+export interface ClaudeUsagePayload {
+  five_hour?: ClaudeUsageWindow;
+  fiveHour?: ClaudeUsageWindow;
+  seven_day?: ClaudeUsageWindow;
+  sevenDay?: ClaudeUsageWindow;
+}
+
+export interface ClaudeQuotaWindow {
+  id: string;
+  label: string;
+  labelKey: string;
+  utilization: number | null;
+  resetTime: string | undefined;
+}
+
+export interface ClaudeQuotaState {
+  status: 'idle' | 'loading' | 'success' | 'error';
+  windows: ClaudeQuotaWindow[];
+  error?: string;
+  errorStatus?: number;
+}
