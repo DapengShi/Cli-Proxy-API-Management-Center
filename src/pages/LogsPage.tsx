@@ -137,10 +137,12 @@ const extractLogLevel = (value: string): LogLevel | undefined => {
 };
 
 const inferLogLevel = (line: string): LogLevel | undefined => {
-  const lowered = line.toLowerCase();
+  // Only check the first 200 characters to avoid false positives from request/response bodies
+  const prefix = line.slice(0, 200);
+  const lowered = prefix.toLowerCase();
   if (/\bfatal\b/.test(lowered)) return 'fatal';
   if (/\berror\b/.test(lowered)) return 'error';
-  if (/\bwarn(?:ing)?\b/.test(lowered) || line.includes('警告')) return 'warn';
+  if (/\bwarn(?:ing)?\b/.test(lowered) || prefix.includes('警告')) return 'warn';
   if (/\binfo\b/.test(lowered)) return 'info';
   if (/\bdebug\b/.test(lowered)) return 'debug';
   if (/\btrace\b/.test(lowered)) return 'trace';
@@ -367,7 +369,7 @@ const copyToClipboard = async (text: string) => {
   }
 };
 
-type TabType = 'logs' | 'errors';
+type TabType = 'logs' | 'errors' | 'requests';
 
 export function LogsPage() {
   const { t } = useTranslation();
@@ -386,8 +388,15 @@ export function LogsPage() {
   const [errorLogs, setErrorLogs] = useState<ErrorLogItem[]>([]);
   const [loadingErrors, setLoadingErrors] = useState(false);
   const [errorLogsError, setErrorLogsError] = useState('');
+  const [requestLogs, setRequestLogs] = useState<ErrorLogItem[]>([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
+  const [requestLogsError, setRequestLogsError] = useState('');
   const [requestLogId, setRequestLogId] = useState<string | null>(null);
   const [requestLogDownloading, setRequestLogDownloading] = useState(false);
+  const [selectedRequestLogForView, setSelectedRequestLogForView] = useState<string | null>(null);
+  const [requestLogLines, setRequestLogLines] = useState<string[]>([]);
+  const [loadingRequestLogView, setLoadingRequestLogView] = useState(false);
+  const [requestLogViewError, setRequestLogViewError] = useState('');
 
   const logViewerRef = useRef<HTMLDivElement | null>(null);
   const pendingScrollToBottomRef = useRef(false);
@@ -549,6 +558,68 @@ export function LogsPage() {
     }
   };
 
+  const loadRequestLogs = async () => {
+    if (connectionStatus !== 'connected') {
+      setLoadingRequests(false);
+      return;
+    }
+
+    setLoadingRequests(true);
+    setRequestLogsError('');
+    try {
+      const res = await logsApi.fetchRequestLogs();
+      setRequestLogs(Array.isArray(res.files) ? res.files : []);
+    } catch (err: unknown) {
+      console.error('Failed to load request logs:', err);
+      setRequestLogs([]);
+      const message = getErrorMessage(err);
+      setRequestLogsError(
+        message ? `${t('logs.request_logs_load_error')}: ${message}` : t('logs.request_logs_load_error')
+      );
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
+
+  const downloadRequestLogFile = async (name: string) => {
+    try {
+      const response = await logsApi.downloadRequestLog(name);
+      const blob = new Blob([response.data], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      showNotification(t('logs.request_log_download_success'), 'success');
+    } catch (err: unknown) {
+      const message = getErrorMessage(err);
+      showNotification(
+        `${t('notification.download_failed')}${message ? `: ${message}` : ''}`,
+        'error'
+      );
+    }
+  };
+
+  const loadRequestLogForView = async (name: string) => {
+    setLoadingRequestLogView(true);
+    setRequestLogViewError('');
+    setSelectedRequestLogForView(name);
+    try {
+      const response = await logsApi.readRequestLogContent(name);
+      const lines = response.content.split('\n').filter((line) => line.trim() !== '');
+      setRequestLogLines(lines);
+    } catch (err: unknown) {
+      const message = getErrorMessage(err);
+      setRequestLogViewError(
+        message ? `${t('logs.request_logs_load_error')}: ${message}` : t('logs.request_logs_load_error')
+      );
+      setRequestLogLines([]);
+    } finally {
+      setLoadingRequestLogView(false);
+    }
+  };
+
   useEffect(() => {
     if (connectionStatus === 'connected') {
       latestTimestampRef.current = 0;
@@ -561,6 +632,13 @@ export function LogsPage() {
     if (activeTab !== 'errors') return;
     if (connectionStatus !== 'connected') return;
     void loadErrorLogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, connectionStatus, requestLogEnabled]);
+
+  useEffect(() => {
+    if (activeTab !== 'requests') return;
+    if (connectionStatus !== 'connected') return;
+    void loadRequestLogs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, connectionStatus, requestLogEnabled]);
 
@@ -766,6 +844,13 @@ export function LogsPage() {
           onClick={() => setActiveTab('errors')}
         >
           {t('logs.error_logs_modal_title')}
+        </button>
+        <button
+          type="button"
+          className={`${styles.tabItem} ${activeTab === 'requests' ? styles.tabActive : ''}`}
+          onClick={() => setActiveTab('requests')}
+        >
+          {t('logs.request_logs_title')}
         </button>
       </div>
 
@@ -1048,6 +1133,192 @@ export function LogsPage() {
                   </div>
                 )}
               </div>
+            </div>
+          </Card>
+        )}
+
+        {activeTab === 'requests' && (
+          <Card
+            extra={
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={loadRequestLogs}
+                loading={loadingRequests}
+                disabled={disableControls}
+              >
+                {t('common.refresh')}
+              </Button>
+            }
+          >
+            <div className="stack">
+              <div className="hint">{t('logs.request_logs_description')}</div>
+
+              {!requestLogEnabled && (
+                <div>
+                  <div className="status-badge warning">{t('logs.request_logs_disabled')}</div>
+                </div>
+              )}
+
+              {requestLogsError && <div className="error-box">{requestLogsError}</div>}
+
+              {loadingRequests ? (
+                <div className="hint">{t('common.loading')}</div>
+              ) : requestLogs.length === 0 ? (
+                <div className="hint">{t('logs.request_logs_empty')}</div>
+              ) : (
+                <>
+                  <div className={styles.filters}>
+                    <div className={styles.fileSelector}>
+                      <label htmlFor="request-log-select" className={styles.fileSelectorLabel}>
+                        {t('logs.select_request_log_file')}:
+                      </label>
+                      <select
+                        id="request-log-select"
+                        className={styles.fileSelectorDropdown}
+                        value={selectedRequestLogForView || ''}
+                        onChange={(e) => {
+                          const fileName = e.target.value;
+                          if (fileName) {
+                            void loadRequestLogForView(fileName);
+                          }
+                        }}
+                        disabled={disableControls}
+                      >
+                        <option value="">{t('logs.select_file_placeholder')}</option>
+                        {requestLogs.map((item) => (
+                          <option key={item.name} value={item.name}>
+                            {item.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {selectedRequestLogForView && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => downloadRequestLogFile(selectedRequestLogForView)}
+                        disabled={disableControls}
+                        className={styles.actionButton}
+                      >
+                        <span className={styles.buttonContent}>
+                          <IconDownload size={16} />
+                          {t('common.download')}
+                        </span>
+                      </Button>
+                    )}
+                  </div>
+
+                  {requestLogViewError && <div className="error-box">{requestLogViewError}</div>}
+
+                  {loadingRequestLogView ? (
+                    <div className="hint">{t('common.loading')}</div>
+                  ) : selectedRequestLogForView && requestLogLines.length > 0 ? (
+                    <div className={styles.logPanel}>
+                      <div className={styles.logList}>
+                        {requestLogLines.map((line, index) => {
+                          const parsed = parseLogLine(line);
+                          const rowClassNames = [styles.logRow];
+                          if (parsed.level === 'warn') rowClassNames.push(styles.rowWarn);
+                          if (parsed.level === 'error' || parsed.level === 'fatal')
+                            rowClassNames.push(styles.rowError);
+                          return (
+                            <div
+                              key={`${index}-${line}`}
+                              className={rowClassNames.join(' ')}
+                              onDoubleClick={() => {
+                                void copyLogLine(line);
+                              }}
+                              title={t('logs.double_click_copy_hint', {
+                                defaultValue: 'Double-click to copy',
+                              })}
+                            >
+                              <div className={styles.timestamp}>{parsed.timestamp || ''}</div>
+                              <div className={styles.rowMain}>
+                                {parsed.level && (
+                                  <span
+                                    className={[
+                                      styles.badge,
+                                      parsed.level === 'info' ? styles.levelInfo : '',
+                                      parsed.level === 'warn' ? styles.levelWarn : '',
+                                      parsed.level === 'error' || parsed.level === 'fatal'
+                                        ? styles.levelError
+                                        : '',
+                                      parsed.level === 'debug' ? styles.levelDebug : '',
+                                      parsed.level === 'trace' ? styles.levelTrace : '',
+                                    ]
+                                      .filter(Boolean)
+                                      .join(' ')}
+                                  >
+                                    {parsed.level.toUpperCase()}
+                                  </span>
+                                )}
+
+                                {parsed.source && (
+                                  <span className={styles.source} title={parsed.source}>
+                                    {parsed.source}
+                                  </span>
+                                )}
+
+                                {parsed.requestId && (
+                                  <span
+                                    className={[styles.badge, styles.requestIdBadge].join(' ')}
+                                    title={parsed.requestId}
+                                  >
+                                    {parsed.requestId}
+                                  </span>
+                                )}
+
+                                {typeof parsed.statusCode === 'number' && (
+                                  <span
+                                    className={[
+                                      styles.badge,
+                                      styles.statusBadge,
+                                      parsed.statusCode >= 200 && parsed.statusCode < 300
+                                        ? styles.statusSuccess
+                                        : parsed.statusCode >= 300 && parsed.statusCode < 400
+                                          ? styles.statusInfo
+                                          : parsed.statusCode >= 400 && parsed.statusCode < 500
+                                            ? styles.statusWarn
+                                            : styles.statusError,
+                                    ].join(' ')}
+                                  >
+                                    {parsed.statusCode}
+                                  </span>
+                                )}
+
+                                {parsed.latency && <span className={styles.pill}>{parsed.latency}</span>}
+                                {parsed.ip && <span className={styles.pill}>{parsed.ip}</span>}
+
+                                {parsed.method && (
+                                  <span className={[styles.badge, styles.methodBadge].join(' ')}>
+                                    {parsed.method}
+                                  </span>
+                                )}
+
+                                {parsed.path && (
+                                  <span className={styles.path} title={parsed.path}>
+                                    {parsed.path}
+                                  </span>
+                                )}
+
+                                {parsed.message && <span className={styles.message}>{parsed.message}</span>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : selectedRequestLogForView ? (
+                    <EmptyState
+                      title={t('logs.empty_title')}
+                      description={t('logs.empty_desc')}
+                    />
+                  ) : (
+                    <div className="hint">{t('logs.select_file_to_view')}</div>
+                  )}
+                </>
+              )}
             </div>
           </Card>
         )}

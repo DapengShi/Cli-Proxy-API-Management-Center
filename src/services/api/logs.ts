@@ -25,6 +25,22 @@ export interface ErrorLogsResponse {
   files?: ErrorLogFile[];
 }
 
+export interface RequestLogFile {
+  name: string;
+  size?: number;
+  modified?: number;
+}
+
+export interface RequestLogsResponse {
+  files?: RequestLogFile[];
+}
+
+export interface RequestLogContentResponse {
+  name: string;
+  size: number;
+  content: string;
+}
+
 export const logsApi = {
   fetchLogs: (params: LogsQuery = {}): Promise<LogsResponse> =>
     apiClient.get('/logs', { params, timeout: LOGS_TIMEOUT_MS }),
@@ -36,6 +52,20 @@ export const logsApi = {
 
   downloadErrorLog: (filename: string) =>
     apiClient.getRaw(`/request-error-logs/${encodeURIComponent(filename)}`, {
+      responseType: 'blob',
+      timeout: LOGS_TIMEOUT_MS
+    }),
+
+  fetchRequestLogs: (): Promise<RequestLogsResponse> =>
+    apiClient.get('/request-logs', { timeout: LOGS_TIMEOUT_MS }),
+
+  readRequestLogContent: (filename: string): Promise<RequestLogContentResponse> =>
+    apiClient.get(`/request-logs/${encodeURIComponent(filename)}/content`, {
+      timeout: LOGS_TIMEOUT_MS
+    }),
+
+  downloadRequestLog: (filename: string) =>
+    apiClient.getRaw(`/request-logs/${encodeURIComponent(filename)}`, {
       responseType: 'blob',
       timeout: LOGS_TIMEOUT_MS
     }),
