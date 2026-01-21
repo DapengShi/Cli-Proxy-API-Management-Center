@@ -13,6 +13,19 @@
   gap: $spacing-sm;
 }
 
+.titleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+
+  @include mobile {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
 .pageTitle {
   font-size: 28px;
   font-weight: 700;
