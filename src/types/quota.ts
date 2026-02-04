@@ -281,3 +281,46 @@ export interface KimiQuotaState {
   error?: string;
   errorStatus?: number;
 }
+
+export interface ClaudeOrganization {
+  uuid: string;
+  name: string;
+  capabilities: string[];
+  settings?: {
+    claude_console_privacy?: string;
+  };
+  api_key?: {
+    first_name: string;
+    role: string;
+  };
+}
+
+export interface ClaudeQuotaState {
+  status: 'idle' | 'loading' | 'success' | 'error';
+  organizations: ClaudeOrganization[];
+  usage?: ClaudeOAuthUsage;
+  error?: string;
+  errorStatus?: number;
+}
+
+export interface ClaudeOAuthUsageWindow {
+  limit?: number;
+  remaining?: number;
+  utilization?: number;
+  reset_at?: string | null;
+  resets_at?: string | null;
+}
+
+export interface ClaudeOAuthUsage {
+  five_hour?: ClaudeOAuthUsageWindow;
+  seven_day?: ClaudeOAuthUsageWindow;
+}
+
+export interface ClaudeSessionAccount {
+  id?: string;
+  uuid?: string;
+  name?: string;
+  display_name?: string;
+  capabilities?: string[];
+  role?: string;
+}

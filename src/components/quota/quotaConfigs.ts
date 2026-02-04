@@ -23,6 +23,10 @@ import type {
   GeminiCliParsedBucket,
   GeminiCliQuotaBucketState,
   GeminiCliQuotaState,
+  ClaudeQuotaState,
+  ClaudeOrganization,
+  ClaudeOAuthUsage,
+  ClaudeOAuthUsageWindow,
   KimiQuotaRow,
   KimiQuotaState,
 } from '@/types';
@@ -38,8 +42,16 @@ import {
   CODEX_REQUEST_HEADERS,
   GEMINI_CLI_QUOTA_URL,
   GEMINI_CLI_REQUEST_HEADERS,
+  CLAUDE_OAUTH_USAGE_URL,
+  CLAUDE_OAUTH_REQUEST_HEADERS,
+  CLAUDE_USAGE_WINDOW_KEYS,
+  CODEX_USAGE_URL,
+  CODEX_REQUEST_HEADERS,
+  GEMINI_CLI_QUOTA_URL,
+  GEMINI_CLI_REQUEST_HEADERS,
   KIMI_USAGE_URL,
   KIMI_REQUEST_HEADERS,
+  normalizeAuthIndexValue,
   normalizeGeminiCliModelId,
   normalizeNumberValue,
   normalizePlanType,
@@ -84,11 +96,13 @@ export interface QuotaStore {
   claudeQuota: Record<string, ClaudeQuotaState>;
   codexQuota: Record<string, CodexQuotaState>;
   geminiCliQuota: Record<string, GeminiCliQuotaState>;
+  claudeQuota: Record<string, ClaudeQuotaState>;
   kimiQuota: Record<string, KimiQuotaState>;
   setAntigravityQuota: (updater: QuotaUpdater<Record<string, AntigravityQuotaState>>) => void;
   setClaudeQuota: (updater: QuotaUpdater<Record<string, ClaudeQuotaState>>) => void;
   setCodexQuota: (updater: QuotaUpdater<Record<string, CodexQuotaState>>) => void;
   setGeminiCliQuota: (updater: QuotaUpdater<Record<string, GeminiCliQuotaState>>) => void;
+  setClaudeQuota: (updater: QuotaUpdater<Record<string, ClaudeQuotaState>>) => void;
   setKimiQuota: (updater: QuotaUpdater<Record<string, KimiQuotaState>>) => void;
   clearQuotaCache: () => void;
 }
@@ -941,6 +955,147 @@ export const GEMINI_CLI_CONFIG: QuotaConfig<GeminiCliQuotaState, GeminiCliQuotaB
   renderQuotaItems: renderGeminiCliItems,
 };
 
+const resolveClaudeAuthInfo = async (
+  file: AuthFileItem
+): Promise<{ isOauth: boolean; accessToken?: string }> => {
+  // 1. Explicitly marked as OAuth
+  const accountType = (file as any).account_type ?? (file as any).accountType;
+  if (
+    file.provider === 'claude-oauth' ||
+    file.type === 'claude-oauth' ||
+    accountType === 'oauth'
+  ) {
+    return { isOauth: true, accessToken: file.access_token ?? undefined };
+  }
+
+  // 2. Read file content to detect
+  try {
+    const text = await authFilesApi.downloadText(file.name);
+    const parsed = JSON.parse(text) as Record<string, any>;
+    if (parsed.access_token || parsed.refresh_token) {
+      return { isOauth: true, accessToken: normalizeStringValue(parsed.access_token) ?? undefined };
+    }
+    if (parsed.api_key || parsed['x-api-key']) {
+      return { isOauth: false };
+    }
+  } catch {
+    // Fallback if parsing fails
+  }
+
+  // 3. Basic fallback based on name
+  const isOauth = file.name?.toLowerCase().includes('oauth') || false;
+  return { isOauth };
+};
+
+const fetchClaudeQuota = async (
+  file: AuthFileItem,
+  t: TFunction
+): Promise<{ windows: ClaudeQuotaWindow[]; extraUsage?: ClaudeExtraUsage | null }> => {
+  const rawAuthIndex = file['auth_index'] ?? file.authIndex;
+  const authIndex = normalizeAuthIndexValue(rawAuthIndex);
+  if (!authIndex) {
+    throw new Error(t('claude_quota.missing_auth_index'));
+  }
+
+  // Handle OAuth vs API Key identification
+  const { isOauth, accessToken } = await resolveClaudeAuthInfo(file);
+
+  if (isOauth) {
+    const headers: Record<string, string> = { ...CLAUDE_OAUTH_REQUEST_HEADERS };
+    if (accessToken) {
+      headers['Authorization'] = headers['Authorization'].replace('$TOKEN$', accessToken);
+    }
+
+    const result = await apiCallApi.request({
+      authIndex,
+      method: 'GET',
+      url: CLAUDE_OAUTH_USAGE_URL,
+      header: headers
+    });
+
+    if (result.statusCode < 200 || result.statusCode >= 300) {
+      throw createStatusError(getApiCallErrorMessage(result), result.statusCode);
+    }
+
+    const body = result.body ?? result.bodyText;
+    try {
+      let payload = typeof body === 'string' ? JSON.parse(body) : body;
+      // If body was a stringified JSON inside a string (e.g. body: "{...}")
+      if (typeof payload === 'string') {
+        payload = JSON.parse(payload);
+      }
+
+      const windows = buildClaudeQuotaWindows(payload, t);
+      return { windows, extraUsage: payload.extra_usage };
+    } catch (e) {
+      throw new Error(t('claude_quota.parse_error'));
+    }
+  }
+
+  // API Key mode
+  throw new Error('Claude API keys are not supported for quota retrieval. Only OAuth is supported.');
+};
+
+const renderClaudeItems = (
+  quota: ClaudeQuotaState,
+  t: TFunction,
+  helpers: QuotaRenderHelpers
+): ReactNode => {
+  const { styles: styleMap, QuotaProgressBar } = helpers;
+  const { createElement: h, Fragment } = React;
+  const windows = quota.windows ?? [];
+  const extraUsage = quota.extraUsage ?? null;
+  const nodes: ReactNode[] = [];
+
+  if (extraUsage && extraUsage.is_enabled) {
+    const usedLabel = `$${(extraUsage.used_credits / 100).toFixed(2)} / $${(extraUsage.monthly_limit / 100).toFixed(2)}`;
+    nodes.push(
+      h(
+        'div',
+        { key: 'extra', className: styleMap.codexPlan },
+        h('span', { className: styleMap.codexPlanLabel }, t('claude_quota.extra_usage_label')),
+        h('span', { className: styleMap.codexPlanValue }, usedLabel)
+      )
+    );
+  }
+
+  if (windows.length === 0) {
+    nodes.push(
+      h('div', { key: 'empty', className: styleMap.quotaMessage }, t('claude_quota.empty_windows'))
+    );
+    return h(Fragment, null, ...nodes);
+  }
+
+  nodes.push(
+    ...windows.map((window) => {
+      const used = window.usedPercent;
+      const clampedUsed = used === null ? null : Math.max(0, Math.min(100, used));
+      const remaining = clampedUsed === null ? null : Math.max(0, Math.min(100, 100 - clampedUsed));
+      const percentLabel = remaining === null ? '--' : `${Math.round(remaining)}%`;
+      const windowLabel = window.labelKey ? t(window.labelKey) : window.label;
+
+      return h(
+        'div',
+        { key: window.id, className: styleMap.quotaRow },
+        h(
+          'div',
+          { className: styleMap.quotaRowHeader },
+          h('span', { className: styleMap.quotaModel }, windowLabel),
+          h(
+            'div',
+            { className: styleMap.quotaMeta },
+            h('span', { className: styleMap.quotaPercent }, percentLabel),
+            h('span', { className: styleMap.quotaReset }, window.resetLabel)
+          )
+        ),
+        h(QuotaProgressBar, { percent: remaining, highThreshold: 80, mediumThreshold: 50 })
+      );
+    })
+  );
+
+  return h(Fragment, null, ...nodes);
+};
+
 const fetchKimiQuota = async (
   file: AuthFileItem,
   t: TFunction
@@ -1020,6 +1175,36 @@ const renderKimiItems = (
       h(QuotaProgressBar, { percent: remaining, highThreshold: 60, mediumThreshold: 20 })
     );
   });
+};
+
+export const CLAUDE_CONFIG: QuotaConfig<
+  ClaudeQuotaState,
+  { windows: ClaudeQuotaWindow[]; extraUsage?: ClaudeExtraUsage | null }
+> = {
+  type: 'claude',
+  i18nPrefix: 'claude_quota',
+  cardIdleMessageKey: 'quota_management.card_idle_hint',
+  filterFn: (file) => isClaudeFile(file) && !isDisabledAuthFile(file),
+  fetchQuota: fetchClaudeQuota,
+  storeSelector: (state) => state.claudeQuota,
+  storeSetter: 'setClaudeQuota',
+  buildLoadingState: () => ({ status: 'loading', windows: [] }),
+  buildSuccessState: (data) => ({
+    status: 'success',
+    windows: data.windows,
+    extraUsage: data.extraUsage,
+  }),
+  buildErrorState: (message, status) => ({
+    status: 'error',
+    windows: [],
+    error: message,
+    errorStatus: status,
+  }),
+  cardClassName: styles.claudeCard,
+  controlsClassName: styles.claudeControls,
+  controlClassName: styles.claudeControl,
+  gridClassName: styles.claudeGrid,
+  renderQuotaItems: renderClaudeItems,
 };
 
 export const KIMI_CONFIG: QuotaConfig<KimiQuotaState, KimiQuotaRow[]> = {
