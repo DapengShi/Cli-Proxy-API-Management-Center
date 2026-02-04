@@ -26,6 +26,7 @@ export function QuotaPage() {
   const [files, setFiles] = useState<AuthFileItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [refreshSignal, setRefreshSignal] = useState(0);
 
   const disableControls = connectionStatus !== 'connected';
 
@@ -53,6 +54,7 @@ export function QuotaPage() {
   }, [t]);
 
   const handleHeaderRefresh = useCallback(async () => {
+    setRefreshSignal((s) => s + 1);
     await Promise.all([loadConfig(), loadFiles()]);
   }, [loadConfig, loadFiles]);
 
@@ -89,24 +91,28 @@ export function QuotaPage() {
         files={files}
         loading={loading}
         disabled={disableControls}
+        refreshSignal={refreshSignal}
       />
       <QuotaSection
         config={CODEX_CONFIG}
         files={files}
         loading={loading}
         disabled={disableControls}
+        refreshSignal={refreshSignal}
       />
       <QuotaSection
         config={GEMINI_CLI_CONFIG}
         files={files}
         loading={loading}
         disabled={disableControls}
+        refreshSignal={refreshSignal}
       />
       <QuotaSection
         config={KIMI_CONFIG}
         files={files}
         loading={loading}
         disabled={disableControls}
+        refreshSignal={refreshSignal}
       />
     </div>
   );
