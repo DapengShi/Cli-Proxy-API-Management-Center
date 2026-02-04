@@ -96,13 +96,15 @@ interface QuotaSectionProps<TState extends QuotaStatusState, TData> {
   files: AuthFileItem[];
   loading: boolean;
   disabled: boolean;
+  refreshSignal?: number;
 }
 
 export function QuotaSection<TState extends QuotaStatusState, TData>({
   config,
   files,
   loading,
-  disabled
+  disabled,
+  refreshSignal
 }: QuotaSectionProps<TState, TData>) {
   const { t } = useTranslation();
   const resolvedTheme: ResolvedTheme = useThemeStore((state) => state.resolvedTheme);
@@ -165,6 +167,7 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
 
   const pendingQuotaRefreshRef = useRef(false);
   const prevFilesLoadingRef = useRef(loading);
+  const prevSectionLoadingRef = useRef(false);
 
   // Auto-refresh on mount if cache is empty
   useEffect(() => {
@@ -174,8 +177,13 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (refreshSignal && refreshSignal > 0) {
+      pendingQuotaRefreshRef.current = true;
+    }
+  }, [refreshSignal]);
+
   const handleRefresh = useCallback(() => {
-    pendingQuotaRefreshRef.current = true;
     void triggerHeaderRefresh();
   }, []);
 
@@ -183,16 +191,19 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
     const wasLoading = prevFilesLoadingRef.current;
     prevFilesLoadingRef.current = loading;
 
+    const wasSectionLoading = prevSectionLoadingRef.current;
+    prevSectionLoadingRef.current = sectionLoading;
+
     if (!pendingQuotaRefreshRef.current) return;
-    if (loading) return;
-    if (!wasLoading) return;
+    if (loading || sectionLoading) return;
+    if (!wasLoading && !wasSectionLoading) return;
 
     pendingQuotaRefreshRef.current = false;
     const scope = effectiveViewMode === 'all' ? 'all' : 'page';
     const targets = effectiveViewMode === 'all' ? filteredFiles : pageItems;
     if (targets.length === 0) return;
     loadQuota(targets, scope, setLoading);
-  }, [loading, effectiveViewMode, filteredFiles, pageItems, loadQuota, setLoading]);
+  }, [loading, sectionLoading, effectiveViewMode, filteredFiles, pageItems, loadQuota, setLoading]);
 
   useEffect(() => {
     if (loading) return;
