@@ -4,6 +4,7 @@
 
 import { create } from 'zustand';
 import type { AntigravityQuotaState, ClaudeQuotaState, CodexQuotaState, GeminiCliQuotaState, KimiQuotaState } from '@/types';
+import { persist } from 'zustand/middleware';
 
 type QuotaUpdater<T> = T | ((prev: T) => T);
 
@@ -28,38 +29,45 @@ const resolveUpdater = <T,>(updater: QuotaUpdater<T>, prev: T): T => {
   return updater;
 };
 
-export const useQuotaStore = create<QuotaStoreState>((set) => ({
-  antigravityQuota: {},
-  claudeQuota: {},
-  codexQuota: {},
-  geminiCliQuota: {},
-  kimiQuota: {},
-  setAntigravityQuota: (updater) =>
-    set((state) => ({
-      antigravityQuota: resolveUpdater(updater, state.antigravityQuota)
-    })),
-  setClaudeQuota: (updater) =>
-    set((state) => ({
-      claudeQuota: resolveUpdater(updater, state.claudeQuota)
-    })),
-  setCodexQuota: (updater) =>
-    set((state) => ({
-      codexQuota: resolveUpdater(updater, state.codexQuota)
-    })),
-  setGeminiCliQuota: (updater) =>
-    set((state) => ({
-      geminiCliQuota: resolveUpdater(updater, state.geminiCliQuota)
-    })),
-  setKimiQuota: (updater) =>
-    set((state) => ({
-      kimiQuota: resolveUpdater(updater, state.kimiQuota)
-    })),
-  clearQuotaCache: () =>
-    set({
+export const useQuotaStore = create<QuotaStoreState>()(
+  persist(
+    (set) => ({
       antigravityQuota: {},
       claudeQuota: {},
       codexQuota: {},
       geminiCliQuota: {},
-      kimiQuota: {}
-    })
-}));
+      kimiQuota: {},
+      setAntigravityQuota: (updater) =>
+        set((state) => ({
+          antigravityQuota: resolveUpdater(updater, state.antigravityQuota)
+        })),
+      setClaudeQuota: (updater) =>
+        set((state) => ({
+          claudeQuota: resolveUpdater(updater, state.claudeQuota)
+        })),
+      setCodexQuota: (updater) =>
+        set((state) => ({
+          codexQuota: resolveUpdater(updater, state.codexQuota)
+        })),
+      setGeminiCliQuota: (updater) =>
+        set((state) => ({
+          geminiCliQuota: resolveUpdater(updater, state.geminiCliQuota)
+        })),
+      setKimiQuota: (updater) =>
+        set((state) => ({
+          kimiQuota: resolveUpdater(updater, state.kimiQuota)
+        })),
+      clearQuotaCache: () =>
+        set({
+          antigravityQuota: {},
+          claudeQuota: {},
+          codexQuota: {},
+          geminiCliQuota: {},
+          kimiQuota: {}
+        })
+    }),
+    {
+      name: 'quota-storage'
+    }
+  )
+);

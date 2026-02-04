@@ -111,7 +111,7 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
 
   /* Removed useRef */
   const [columns, gridRef] = useGridColumns(380); // Min card width 380px matches SCSS
-  const [viewMode, setViewMode] = useState<ViewMode>('paged');
+  const [viewMode, setViewMode] = useState<ViewMode>('all');
   const [showTooManyWarning, setShowTooManyWarning] = useState(false);
 
   const filteredFiles = useMemo(() => files.filter((file) => config.filterFn(file)), [
@@ -163,6 +163,14 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
 
   const pendingQuotaRefreshRef = useRef(false);
   const prevFilesLoadingRef = useRef(loading);
+
+  // Auto-refresh on mount if cache is empty
+  useEffect(() => {
+    if (Object.keys(quota).length === 0) {
+      pendingQuotaRefreshRef.current = true;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleRefresh = useCallback(() => {
     pendingQuotaRefreshRef.current = true;

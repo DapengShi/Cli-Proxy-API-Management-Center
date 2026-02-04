@@ -156,12 +156,20 @@ export const GEMINI_CLI_GROUP_LOOKUP = new Map(
 export const GEMINI_CLI_IGNORED_MODEL_PREFIXES = ['gemini-2.0-flash'];
 
 // Claude API configuration
-export const CLAUDE_USAGE_URL = 'https://api.anthropic.com/api/oauth/usage';
+export const CLAUDE_QUOTA_URL = 'https://api.anthropic.com/v1/organizations';
 
 export const CLAUDE_REQUEST_HEADERS = {
-  Authorization: 'Bearer $TOKEN$',
+  'x-api-key': '$TOKEN$',
+  'anthropic-version': '2023-06-01',
   'Content-Type': 'application/json',
+};
+
+export const CLAUDE_OAUTH_USAGE_URL = 'https://api.anthropic.com/api/oauth/usage';
+
+export const CLAUDE_OAUTH_REQUEST_HEADERS = {
+  Authorization: 'Bearer $TOKEN$',
   'anthropic-beta': 'oauth-2025-04-20',
+  'Content-Type': 'application/json',
 };
 
 export const CLAUDE_USAGE_WINDOW_KEYS = [
