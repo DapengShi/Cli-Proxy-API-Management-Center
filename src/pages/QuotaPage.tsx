@@ -4,7 +4,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useHeaderRefresh } from '@/hooks/useHeaderRefresh';
+import { useHeaderRefresh, triggerHeaderRefresh } from '@/hooks/useHeaderRefresh';
+import { useInterval } from '@/hooks/useInterval';
 import { useAuthStore } from '@/stores';
 import { authFilesApi, configFileApi } from '@/services/api';
 import {
@@ -56,6 +57,12 @@ export function QuotaPage() {
   }, [loadConfig, loadFiles]);
 
   useHeaderRefresh(handleHeaderRefresh);
+
+  useInterval(() => {
+    if (!loading && connectionStatus === 'connected') {
+      void triggerHeaderRefresh();
+    }
+  }, 60000);
 
   useEffect(() => {
     loadFiles();
