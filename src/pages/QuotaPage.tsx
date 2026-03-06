@@ -85,6 +85,7 @@ export function QuotaPage() {
         files={files}
         loading={loading}
         disabled={disableControls}
+        refreshSignal={refreshSignal}
       />
       <QuotaSection
         config={ANTIGRAVITY_CONFIG}

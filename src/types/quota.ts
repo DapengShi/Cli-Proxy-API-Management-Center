@@ -162,9 +162,33 @@ export interface ClaudeQuotaWindow {
   resetLabel: string;
 }
 
+export interface ClaudeOAuthUsageWindow {
+  limit?: number;
+  remaining?: number;
+  utilization?: number;
+  reset_at?: string | null;
+  resets_at?: string | null;
+}
+
+export interface ClaudeOAuthUsage {
+  five_hour?: ClaudeOAuthUsageWindow;
+  seven_day?: ClaudeOAuthUsageWindow;
+}
+
+export interface ClaudeSessionAccount {
+  id?: string;
+  uuid?: string;
+  name?: string;
+  display_name?: string;
+  capabilities?: string[];
+  role?: string;
+}
+
 export interface ClaudeQuotaState {
   status: 'idle' | 'loading' | 'success' | 'error';
   windows: ClaudeQuotaWindow[];
+  organizations?: ClaudeOrganization[];
+  usage?: ClaudeOAuthUsage;
   extraUsage?: ClaudeExtraUsage | null;
   planType?: string | null;
   error?: string;
@@ -293,34 +317,4 @@ export interface ClaudeOrganization {
     first_name: string;
     role: string;
   };
-}
-
-export interface ClaudeQuotaState {
-  status: 'idle' | 'loading' | 'success' | 'error';
-  organizations: ClaudeOrganization[];
-  usage?: ClaudeOAuthUsage;
-  error?: string;
-  errorStatus?: number;
-}
-
-export interface ClaudeOAuthUsageWindow {
-  limit?: number;
-  remaining?: number;
-  utilization?: number;
-  reset_at?: string | null;
-  resets_at?: string | null;
-}
-
-export interface ClaudeOAuthUsage {
-  five_hour?: ClaudeOAuthUsageWindow;
-  seven_day?: ClaudeOAuthUsageWindow;
-}
-
-export interface ClaudeSessionAccount {
-  id?: string;
-  uuid?: string;
-  name?: string;
-  display_name?: string;
-  capabilities?: string[];
-  role?: string;
 }
