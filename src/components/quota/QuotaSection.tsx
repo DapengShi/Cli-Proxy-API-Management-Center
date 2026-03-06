@@ -104,7 +104,7 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
   files,
   loading,
   disabled,
-  refreshSignal
+  refreshSignal = 0
 }: QuotaSectionProps<TState, TData>) {
   const { t } = useTranslation();
   const resolvedTheme: ResolvedTheme = useThemeStore((state) => state.resolvedTheme);

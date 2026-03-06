@@ -11,7 +11,6 @@ import type {
   AntigravityQuotaState,
   AuthFileItem,
   ClaudeExtraUsage,
-  ClaudeProfileResponse,
   ClaudeQuotaState,
   ClaudeQuotaWindow,
   ClaudeUsagePayload,
@@ -34,15 +33,14 @@ import { useQuotaStore } from '@/stores';
 import {
   ANTIGRAVITY_QUOTA_URLS,
   ANTIGRAVITY_REQUEST_HEADERS,
-  CLAUDE_PROFILE_URL,
-  CLAUDE_USAGE_URL,
-  CLAUDE_REQUEST_HEADERS,
   CLAUDE_USAGE_WINDOW_KEYS,
   CODEX_USAGE_URL,
   CODEX_REQUEST_HEADERS,
   GEMINI_CLI_QUOTA_URL,
   GEMINI_CLI_CODE_ASSIST_URL,
   GEMINI_CLI_REQUEST_HEADERS,
+  CLAUDE_OAUTH_USAGE_URL,
+  CLAUDE_OAUTH_REQUEST_HEADERS,
   KIMI_USAGE_URL,
   KIMI_REQUEST_HEADERS,
   normalizeGeminiCliModelId,
@@ -936,54 +934,90 @@ const buildClaudeQuotaWindows = (
   return windows;
 };
 
-const normalizeFlagValue = (value: unknown): boolean | undefined => {
-  if (value === undefined || value === null) return undefined;
-  if (typeof value === 'boolean') return value;
-  if (typeof value === 'number') return value !== 0;
-  if (typeof value === 'string') {
-    const trimmed = value.trim().toLowerCase();
-    if (['true', '1', 'yes', 'y', 'on'].includes(trimmed)) return true;
-    if (['false', '0', 'no', 'n', 'off'].includes(trimmed)) return false;
-  }
-  return undefined;
-};
+const resolveClaudeAuthInfo = async (
+  file: AuthFileItem
+): Promise<{ isOauth: boolean }> => {
+  const metadata =
+    file && typeof file.metadata === 'object' && file.metadata !== null
+      ? (file.metadata as Record<string, unknown>)
+      : null;
+  const attributes =
+    file && typeof file.attributes === 'object' && file.attributes !== null
+      ? (file.attributes as Record<string, unknown>)
+      : null;
 
-const parseClaudeProfilePayload = (payload: unknown): ClaudeProfileResponse | null => {
-  if (payload === undefined || payload === null) return null;
-  if (typeof payload === 'string') {
-    const trimmed = payload.trim();
-    if (!trimmed) return null;
-    try {
-      return JSON.parse(trimmed) as ClaudeProfileResponse;
-    } catch {
-      return null;
+  const accessToken = normalizeStringValue(
+    file.access_token ??
+      file.accessToken ??
+      metadata?.access_token ??
+      metadata?.accessToken ??
+      attributes?.access_token ??
+      attributes?.accessToken
+  );
+  const refreshToken = normalizeStringValue(
+    file.refresh_token ??
+      file.refreshToken ??
+      metadata?.refresh_token ??
+      metadata?.refreshToken ??
+      attributes?.refresh_token ??
+      attributes?.refreshToken
+  );
+  const apiKey = normalizeStringValue(
+    file.api_key ??
+      file.apiKey ??
+      file['x-api-key'] ??
+      metadata?.api_key ??
+      metadata?.apiKey ??
+      metadata?.['x-api-key'] ??
+      attributes?.api_key ??
+      attributes?.apiKey ??
+      attributes?.['x-api-key']
+  );
+
+  const accountType = normalizeStringValue(
+    file.account_type ??
+      file.accountType ??
+      metadata?.account_type ??
+      metadata?.accountType ??
+      attributes?.account_type ??
+      attributes?.accountType
+  );
+  const normalizedAccountType = accountType?.toLowerCase();
+  if (normalizedAccountType === 'oauth') {
+    return { isOauth: true };
+  }
+  if (normalizedAccountType === 'api' || normalizedAccountType === 'api-key' || normalizedAccountType === 'api_key') {
+    return { isOauth: false };
+  }
+
+  if (accessToken || refreshToken) {
+    return { isOauth: true };
+  }
+  if (apiKey) {
+    return { isOauth: false };
+  }
+
+  try {
+    const text = await authFilesApi.downloadText(file.name);
+    const parsed = JSON.parse(text) as Record<string, unknown>;
+    const parsedAccountType = normalizeStringValue(parsed.account_type ?? parsed.accountType);
+    if (parsedAccountType?.toLowerCase() === 'oauth') {
+      return { isOauth: true };
     }
-  }
-  if (typeof payload === 'object') {
-    return payload as ClaudeProfileResponse;
-  }
-  return null;
-};
-
-const resolveClaudePlanType = (profile: ClaudeProfileResponse | null): string | null => {
-  if (!profile) return null;
-
-  const hasClaudeMax = normalizeFlagValue(profile.account?.has_claude_max);
-  if (hasClaudeMax) return 'plan_max';
-
-  const hasClaudePro = normalizeFlagValue(profile.account?.has_claude_pro);
-  if (hasClaudePro) return 'plan_pro';
-
-  const organizationType = normalizeStringValue(profile.organization?.organization_type)?.toLowerCase();
-  const subscriptionStatus = normalizeStringValue(profile.organization?.subscription_status)?.toLowerCase();
-
-  if (organizationType === 'claude_team' && subscriptionStatus === 'active') {
-    return 'plan_team';
+    const parsedAccessToken = normalizeStringValue(parsed.access_token ?? parsed.accessToken);
+    const parsedRefreshToken = normalizeStringValue(parsed.refresh_token ?? parsed.refreshToken);
+    if (parsedAccessToken || parsedRefreshToken) {
+      return { isOauth: true };
+    }
+    if (parsed.api_key || parsed.apiKey || parsed['x-api-key'] || parsed['x_api_key']) {
+      return { isOauth: false };
+    }
+  } catch {
+    // Fall through to permissive default when auth file body is unavailable.
   }
 
-  if (hasClaudeMax === false && hasClaudePro === false) return 'plan_free';
-
-  return null;
+  // Claude quota endpoint only supports OAuth. Prefer attempting a refresh instead of false negatives.
+  return { isOauth: true };
 };
 
 const fetchClaudeQuota = async (
@@ -996,26 +1030,18 @@ const fetchClaudeQuota = async (
     throw new Error(t('claude_quota.missing_auth_index'));
   }
 
-  const [usageResult, profileResult] = await Promise.allSettled([
-    apiCallApi.request({
-      authIndex,
-      method: 'GET',
-      url: CLAUDE_USAGE_URL,
-      header: { ...CLAUDE_REQUEST_HEADERS },
-    }),
-    apiCallApi.request({
-      authIndex,
-      method: 'GET',
-      url: CLAUDE_PROFILE_URL,
-      header: { ...CLAUDE_REQUEST_HEADERS },
-    }),
-  ]);
-
-  if (usageResult.status === 'rejected') {
-    throw usageResult.reason;
+  const { isOauth } = await resolveClaudeAuthInfo(file);
+  if (!isOauth) {
+    throw new Error('Claude API keys are not supported for quota retrieval. Only OAuth is supported.');
   }
 
-  const result = usageResult.value;
+  const result = await apiCallApi.request({
+    authIndex,
+    method: 'GET',
+    url: CLAUDE_OAUTH_USAGE_URL,
+    // Keep the $TOKEN$ placeholder so backend auth-index token injection/refresh logic can run.
+    header: { ...CLAUDE_OAUTH_REQUEST_HEADERS },
+  });
 
   if (result.statusCode < 200 || result.statusCode >= 300) {
     throw createStatusError(getApiCallErrorMessage(result), result.statusCode);
@@ -1027,16 +1053,8 @@ const fetchClaudeQuota = async (
   }
 
   const windows = buildClaudeQuotaWindows(payload, t);
-  const planType =
-    profileResult.status === 'fulfilled' &&
-    profileResult.value.statusCode >= 200 &&
-    profileResult.value.statusCode < 300
-      ? resolveClaudePlanType(
-          parseClaudeProfilePayload(profileResult.value.body ?? profileResult.value.bodyText)
-        )
-      : null;
 
-  return { windows, extraUsage: payload.extra_usage, planType };
+  return { windows, extraUsage: payload.extra_usage, planType: null };
 };
 
 const renderClaudeItems = (
