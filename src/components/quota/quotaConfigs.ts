@@ -759,6 +759,13 @@ const resolveClaudeAuthInfo = async (
   return { isOauth: true };
 };
 
+const CLAUDE_QUOTA_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+const claudeQuotaCache = new Map<string, {
+  data: { windows: ClaudeQuotaWindow[]; extraUsage?: ClaudeExtraUsage | null; planType?: string | null };
+  timestamp: number;
+}>();
+
 const fetchClaudeQuota = async (
   file: AuthFileItem,
   t: TFunction
@@ -769,12 +776,18 @@ const fetchClaudeQuota = async (
     throw new Error(t('claude_quota.missing_auth_index'));
   }
 
+  const cacheKey = authIndex;
+  const cached = claudeQuotaCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CLAUDE_QUOTA_CACHE_TTL_MS) {
+    return cached.data;
+  }
+
   const { isOauth } = await resolveClaudeAuthInfo(file);
   if (!isOauth) {
     throw new Error('Claude API keys are not supported for quota retrieval. Only OAuth is supported.');
   }
 
-  const result = await apiCallApi.request({
+  const response = await apiCallApi.request({
     authIndex,
     method: 'GET',
     url: CLAUDE_OAUTH_USAGE_URL,
@@ -782,18 +795,20 @@ const fetchClaudeQuota = async (
     header: { ...CLAUDE_OAUTH_REQUEST_HEADERS },
   });
 
-  if (result.statusCode < 200 || result.statusCode >= 300) {
-    throw createStatusError(getApiCallErrorMessage(result), result.statusCode);
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw createStatusError(getApiCallErrorMessage(response), response.statusCode);
   }
 
-  const payload = parseClaudeUsagePayload(result.body ?? result.bodyText);
+  const payload = parseClaudeUsagePayload(response.body ?? response.bodyText);
   if (!payload) {
     throw new Error(t('claude_quota.empty_windows'));
   }
 
   const windows = buildClaudeQuotaWindows(payload, t);
 
-  return { windows, extraUsage: payload.extra_usage, planType: null };
+  const result = { windows, extraUsage: payload.extra_usage, planType: null };
+  claudeQuotaCache.set(cacheKey, { data: result, timestamp: Date.now() });
+  return result;
 };
 
 const renderClaudeItems = (
